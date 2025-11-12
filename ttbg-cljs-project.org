@@ -76,7 +76,7 @@
 #+begin_src clojure :no-expand t :mkdirp yes
 (ns keechma-todomvc.components
   "# Todo UI Component system"
-  (:require [keechma-todomvc.components.app :as app]
+  (:require 
             [keechma-todomvc.components.footer :as footer]
             [keechma-todomvc.components.new-todo :as new-todo]
             [keechma-todomvc.components.todo-edit :as todo-edit]
@@ -85,7 +85,8 @@
             [keechma-todomvc.components.todo-list :as todo-list]
             [keechma-todomvc.components.export-txt :as export-txt]
             [keechma-todomvc.components.import-txt :as import-txt]
-            [keechma-todomvc.components.toggle-todos :as toggle-todos]))
+            [keechma-todomvc.components.toggle-todos :as toggle-todos]
+            [keechma-todomvc.components.app :as app]))
 
 (def system
   "Defines the component `system`. All the components that send commands
@@ -3191,12 +3192,17 @@ https://www.youtube.com/watch?v=19L5DbC2Ye4
 *** инит
 *** первый комит
 *** запостить
-** NEXT взять за основу тудуер
+** DONE взять за основу тудуер
 скопировать в папку версию тудуера
 без js
 ** TODO сделать первый запуск
 ** убрать КСС
 ** вычестить всё лишнее
+** сделать копию темплата
+как отдельный проект для кичма и можно развивать его отдельно
+чтоб он включал всебя в томе чесле полу готовый орг
+templ-korgwheel
+template keechma org figwheel
 
 * backlog
 * project comands
