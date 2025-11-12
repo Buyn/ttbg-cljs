@@ -1,16 +1,13 @@
 :PROPERTIES:
 :header-args: :tangle no :mkdirp yes :results output silent :no-expand t
 :END:
-* src worder
+* src ttbg-cljs
 ** src project
 *** other
 (find-file-other-frame "./project.clj")
 (find-file-other-frame "dev.cljs.edn")
-/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/dev.cljs.edn
 (find-file-other-frame "test.cljs.edn")
-/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/test.cljs.edn
 (find-file-other-frame "figwheel-main.edn")
-/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/figwheel-main.edn
 *** CANCELED deps.edn
 :PROPERTIES:
 :header-args: :tangle no
@@ -18,7 +15,7 @@
 :header-args: :tangle deps.edn
 **** file
 (find-file-other-frame "deps.edn")
-/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/deps.edn
+/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/ttbg-cljs/deps.edn
 **** src
 ***** src deps.edn
 #+begin_src clojure :no-expand t
@@ -174,17 +171,17 @@
 (find-file-other-frame "./src/keechma_todomvc/util.cljs")
 (find-file-other-frame "./src/keechma_todomvc/edb.cljs")
 (find-file-other-frame "./src/keechma_todomvc/edb.clj")
-*** CANCELED worder.cljs
+*** CANCELED ttbg-cljs.cljs
 :PROPERTIES:
 :header-args: :tangle no
 :END:
-:header-args: :tangle src/keechma_todomvc/worder.cljs
-**** file worder.cljs
-(find-file-other-frame "src/keechma_todomvc/worder.cljs")
-**** src worder.cljs
-***** test version src worder.cljs
+:header-args: :tangle src/keechma_todomvc/ttbg-cljs.cljs
+**** file ttbg-cljs.cljs
+(find-file-other-frame "src/keechma_todomvc/ttbg-cljs.cljs")
+**** src ttbg-cljs.cljs
+***** test version src ttbg-cljs.cljs
 #+begin_src clojure :no-expand t :mkdirp yes
-(ns ^:figwheel-hooks keechma-todomvc.worder
+(ns ^:figwheel-hooks keechma-todomvc.ttbg-cljs
   (:require
    [keechma-todomvc.components :as components]
    [keechma-todomvc.controllers.todos :as todos]
@@ -225,9 +222,9 @@
 
 
 #+end_src
-***** keechma version src worder.cljs
+***** keechma version src ttbg-cljs.cljs
 #+begin_src clojure :no-expand t :mkdirp yes :tangle no
-(ns ^:figwheel-hooks keechma-todomvc.worder
+(ns ^:figwheel-hooks keechma-todomvc.ttbg-cljs
   "# Keechma TodoMVC App"
   (:require [keechma-todomvc.components :as components]
             [keechma-todomvc.controllers.todos :as todos]
@@ -284,13 +281,13 @@
 
 (dev-setup)
 (start!)
-(println "This text is printed from src/keechma_todomvc/worder.cljs. Go ahead and edit it and see reloading in action.")
+(println "This text is printed from src/keechma_todomvc/ttbg-cljs.cljs. Go ahead and edit it and see reloading in action.")
 
 
 #+end_src
-***** src worder.cljs
+***** src ttbg-cljs.cljs
 #+begin_src clojure :no-expand t :mkdirp yes :tangle no
-(ns ^:figwheel-hooks keechma-todomvc.worder
+(ns ^:figwheel-hooks keechma-todomvc.ttbg-cljs
   "# Keechma TodoMVC App"
   (:require [keechma-todomvc.components :as components]
             [keechma-todomvc.controllers.todos :as todos]
@@ -300,7 +297,7 @@
             [reagent.dom :as rdom]
             [keechma.app-state :as app-state]))
 
-;; (ns ^:figwheel-hooks keechma-todomvc.worder
+;; (ns ^:figwheel-hooks keechma-todomvc.ttbg-cljs
 ;;   (:require
 ;;    [goog.dom :as gdom]
 ;;    [reagent.core :as reagent :refer [atom]]
@@ -352,7 +349,7 @@
   (dev-setup)
   (start!))
 
-(println "This text is printed from src/keechma_todomvc/worder.cljs. Go ahead and edit it and see reloading in action.")
+(println "This text is printed from src/keechma_todomvc/ttbg-cljs.cljs. Go ahead and edit it and see reloading in action.")
 
 ;; (defn multiply [a b] (* a b))
 
@@ -365,7 +362,7 @@
 (defn hello-world []
   [:div
    [:h1 (:text @app-state)]
-   [:h3 "Edit this in src/keechma_todomvc/worder.cljs and watch it change!"]])
+   [:h3 "Edit this in src/keechma_todomvc/ttbg-cljs.cljs and watch it change!"]])
 
 (defn mount [el]
   (rdom/render [hello-world] el))
@@ -394,13 +391,13 @@
 #+end_src
 ***** CANCELED original figwheel template
 #+begin_src clojure :no-expand t :mkdirp yes :tangle no 
-(ns ^:figwheel-hooks keechma-todomvc.worder
+(ns ^:figwheel-hooks keechma-todomvc.ttbg-cljs
   (:require
    [goog.dom :as gdom]
    [reagent.core :as reagent :refer [atom]]
    [reagent.dom :as rdom]))
 
-(println "This text is printed from src/keechma_todomvc/worder.cljs. Go ahead and edit it and see reloading in action.")
+(println "This text is printed from src/keechma_todomvc/ttbg-cljs.cljs. Go ahead and edit it and see reloading in action.")
 
 (defn multiply [a b] (* a b))
 
@@ -413,7 +410,7 @@
 (defn hello-world []
   [:div
    [:h1 (:text @app-state)]
-   [:h3 "Edit this in src/keechma_todomvc/worder.cljs and watch it change!"]])
+   [:h3 "Edit this in src/keechma_todomvc/ttbg-cljs.cljs and watch it change!"]])
 
 (defn mount [el]
   (rdom/render [hello-world] el))
@@ -436,10 +433,10 @@
 #+end_src
 **** repl
 
-# (ns ^:figwheel-hooks keechma-todomvc.worder
-(require `[keechma-todomvc.worder :as worder-main]
+# (ns ^:figwheel-hooks keechma-todomvc.ttbg-cljs
+(require `[keechma-todomvc.ttbg-cljs :as ttbg-cljs-main]
 
-(in-ns `keechma-todomvc.worder)
+(in-ns `keechma-todomvc.ttbg-cljs)
 **** exampl
 (find-file-other-frame "./src/keechma_todomvc/app.cljs")
 ** src components
@@ -476,7 +473,7 @@
   [:<>
    [:section.todoapp
     [:header.header
-     [:h1 "Worder"]
+     [:h1 "Ttbg-Cljs"]
      [:div.export-panel
       [comp> ctx :import-txt]
       [comp> ctx :import-txt {:path "words-ung-ua.txt"
@@ -550,7 +547,7 @@
   [:<>
    [:section.todoapp
     [:header.header
-     [:h1 "Worder"]
+     [:h1 "Ttbg-Cljs"]
      [comp> ctx :new-todo]]
     (when (sub> ctx :has-todos?)
       [:<>
@@ -578,7 +575,7 @@
 ***** old
      [comp> ctx :timer-button]
                           :timer-button
-     [:h1 "Worder"]
+     [:h1 "Ttbg-Cljs"]
      ;; [comp> ctx :timer-button]
      [comp> ctx :new-todo]]
 
@@ -1731,7 +1728,7 @@ If the item is currently being edited, overlays a `todo-edit` component.
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Worder • Keechma</title>
+    <title>Ttbg-Cljs • Keechma</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="css/style.css" rel="stylesheet" type="text/css">
     <link rel="icon" href="https://clojurescript.org/images/cljs-logo-icon-32.png">
@@ -2137,7 +2134,7 @@ html .clear-completed:active {
     }
 }
 #+end_src
-***** /* === Timer Component Styling Fit for WorderMVC === */
+***** /* === Timer Component Styling Fit for Ttbg-CljsMVC === */
 #+begin_src css :no-expand t :mkdirp yes 
 
 .todo-list li label {
@@ -2204,7 +2201,7 @@ html .clear-completed:active {
 }
 
 #+end_src
-***** /* === Export Button (Keechma WorderMVC) === */
+***** /* === Export Button (Keechma Ttbg-CljsMVC) === */
 #+begin_src css :no-expand t :mkdirp yes 
 .export-btn {
     float: right;
@@ -2329,7 +2326,7 @@ html .clear-completed:active {
 
 #+end_src
 
-***** 00 /* === Export Button (Keechma WorderMVC) === */
+***** 00 /* === Export Button (Keechma Ttbg-CljsMVC) === */
 #+begin_src css :no-expand t :mkdirp yes 
 .export-btn {
     float: right;
@@ -2363,7 +2360,7 @@ html .clear-completed:active {
 
 
 #+end_src
-* files worder
+* files ttbg-cljs
 ** files core
 (find-file-other-frame "./project.clj")
 (find-file-other-frame "./src/keechma_todomvc/app.cljs")
@@ -2391,7 +2388,7 @@ html .clear-completed:active {
 ** files project
 (find-file-other-frame "./project.clj")
 (find-file-other-frame "./target/stale/leiningen.figwheel.clean-on-dependency-change")
-* run
+* run ttbg-cljs
 ** repl
 #+begin_src elisp :results output silent 
 (evil-previous-line)
@@ -2410,7 +2407,7 @@ lein figwheel
 :cljs/restart
 
 
-cd worder
+cd ttbg-cljs
 clojure -M:fig:build
 clojure -M:fig:build dev
 
@@ -2423,22 +2420,40 @@ rm -rf .cpcache
 lein cljsbuild once
 
 lein deps :refresh
+** run
+lein figwheel
 
+:cljs/quit
+:cljs/restart
 ** git
 *** init
 git init
 git add .
 git commit -m "start"
 *** push
+git remote add origin https://github.com/Buyn/ttbg-cljs.git
+git branch -M main
+git push -u origin main
+
+
 *** clon
-git clone https://github.com/keechma/example-todomvc.git
+git clone https://github.com/Buyn/ttbg-cljs.git
+
+
+echo "# ttbg-cljs" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/Buyn/ttbg-cljs.git
+git push -u origin main
 ** build
 :cljs/quit
 rm resources/public/js/app.js
 lein do clean, cljsbuild once min
-cp resources/public/js/app.js "~/Dev/ClojureScript/worder/js/app.js"
-cp resources/public/index.html "~/Dev/ClojureScript/worder/index.html"
-cp -r resources/public/txt "~/Dev/ClojureScript/worder/"
+cp resources/public/js/app.js "~/Dev/ClojureScript/ttbg-cljs/js/app.js"
+cp resources/public/index.html "~/Dev/ClojureScript/ttbg-cljs/index.html"
+cp -r resources/public/txt "~/Dev/ClojureScript/ttbg-cljs/"
 
 
 надо удолить вручную
@@ -2466,15 +2481,15 @@ lein cljsbuild once min
 
 ** publish
 *** git
-git remote add origin https://github.com/Buyn/worder.git
+git remote add origin https://github.com/Buyn/ttbg-cljs.git
 git branch -M main
 git push -u origin main
 
 https://buyn.github.io/
 
 https://<username>.github.io/<repo-name>/.
-https://buyn.github.io/worder.git
-https://buyn.github.io/worder.git/.
+https://buyn.github.io/ttbg-cljs.git
+https://buyn.github.io/ttbg-cljs.git/.
 *** orign
 # Sample workflow for building and deploying a Jekyll site to GitHub Pages
 name: Deploy Jekyll with GitHub Pages dependencies preinstalled
@@ -2573,7 +2588,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 *** workflows
-worder/.github/workflows
+ttbg-cljs/.github/workflows
 .github/workflows/deploy.yml
 *** name: Build and Deploy
 name: Build and Deploy
@@ -3171,13 +3186,15 @@ https://www.youtube.com/watch?v=19L5DbC2Ye4
 ** DONE сделать авто открытие орга
 видемо новый раздел десктоп
 и добавить по аналогии позиция файла
-** TODO сделать гит
+** DONE сделать гит
 *** на сайте
 *** инит
 *** первый комит
 *** запостить
-** взять за основу тудуер
-** сделать первый запуск
+** NEXT взять за основу тудуер
+скопировать в папку версию тудуера
+без js
+** TODO сделать первый запуск
 ** убрать КСС
 ** вычестить всё лишнее
 
