@@ -1,0 +1,3342 @@
+:PROPERTIES:
+:header-args: :tangle no :mkdirp yes :results output silent :no-expand t
+:END:
+* src worder
+** src project
+*** other
+(find-file-other-frame "./project.clj")
+(find-file-other-frame "dev.cljs.edn")
+/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/dev.cljs.edn
+(find-file-other-frame "test.cljs.edn")
+/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/test.cljs.edn
+(find-file-other-frame "figwheel-main.edn")
+/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/figwheel-main.edn
+*** CANCELED deps.edn
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+:header-args: :tangle deps.edn
+**** file
+(find-file-other-frame "deps.edn")
+/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/deps.edn
+**** src
+***** src deps.edn
+#+begin_src clojure :no-expand t
+{:deps {org.clojure/clojure {:mvn/version "1.12.0"}
+        org.clojure/clojurescript {:mvn/version "1.11.132"}
+        org.clojure/data.json {:mvn/version "2.5.1"}
+        cljsjs/react {:mvn/version "18.3.1-1"}
+        cljsjs/react-dom {:mvn/version "18.3.1-1"}
+        org.clojure/core.async     {:mvn/version "0.7.559"
+                                    :exclusions  [org.clojure/tools.reader]}
+        keechma/keechma            {:mvn/version "0.3.14"
+                                    :exclusions [cljsjs/react-with-addons
+                                                 cljsjs/react-dom
+                                                 cljsjs/react-dom-server]}
+        keechma/entitydb           {:mvn/version "0.1.6"}
+        reagent/reagent {:mvn/version "0.9.1" }}
+
+ :paths ["src" "resources"]
+
+ :aliases {:fig {:extra-deps
+                 {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
+                  com.bhauman/figwheel-main {:mvn/version "0.2.20"}
+                  org.slf4j/slf4j-nop {:mvn/version "2.0.16"}}
+                 :extra-paths ["target" "test"]}
+           :build {:main-opts ["-m" "figwheel.main" "-b" "dev" "-r"]}
+           :clean {:main-opts ["-m" "figwheel.main" "--clean" "dev"]}
+           :min   {:main-opts ["-m" "figwheel.main" "-O" "advanced" "-bo" "dev"]}
+           :test  {:main-opts ["-m" "figwheel.main" "-co" "test.cljs.edn" "-m" "keechma-todomvc.test-runner"]}}}
+
+#+end_src
+***** CANCELED orignl
+#+begin_src clojure :no-expand t :tangle no 
+{:deps {org.clojure/clojure {:mvn/version "1.12.0"}
+        org.clojure/clojurescript {:mvn/version "1.11.132"}
+        org.clojure/data.json {:mvn/version "2.5.1"}
+        cljsjs/react {:mvn/version "18.3.1-1"}
+        cljsjs/react-dom {:mvn/version "18.3.1-1"}
+        reagent/reagent {:mvn/version "1.2.0" }}
+ :paths ["src" "resources"]
+ :aliases {:fig {:extra-deps
+                 {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
+                  com.bhauman/figwheel-main {:mvn/version "0.2.20"}
+                  org.slf4j/slf4j-nop {:mvn/version "2.0.16"}}
+                 :extra-paths ["target" "test"]}
+           :build {:main-opts ["-m" "figwheel.main" "-b" "dev" "-r"]}
+           :clean {:main-opts ["-m" "figwheel.main" "--clean" "dev"]}
+           :min   {:main-opts ["-m" "figwheel.main" "-O" "advanced" "-bo" "dev"]}
+           :test  {:main-opts ["-m" "figwheel.main" "-co" "test.cljs.edn" "-m" "keechma-todomvc.test-runner"]}}}
+#+end_src
+** src core
+*** components.cljs
+:PROPERTIES:
+:header-args: :tangle src/keechma_todomvc/components.cljs
+:END:
+**** file components.cljs
+(find-file-other-frame "./src/keechma_todomvc/components.cljs")
+**** src components.cljs
+#+begin_src clojure :no-expand t :mkdirp yes
+(ns keechma-todomvc.components
+  "# Todo UI Component system"
+  (:require [keechma-todomvc.components.app :as app]
+            [keechma-todomvc.components.footer :as footer]
+            [keechma-todomvc.components.new-todo :as new-todo]
+            [keechma-todomvc.components.todo-edit :as todo-edit]
+            [keechma-todomvc.components.timer-button :as timer-button]
+            [keechma-todomvc.components.todo-item :as todo-item]
+            [keechma-todomvc.components.todo-list :as todo-list]
+            [keechma-todomvc.components.export-txt :as export-txt]
+            [keechma-todomvc.components.import-txt :as import-txt]
+            [keechma-todomvc.components.toggle-todos :as toggle-todos]))
+
+(def system
+  "Defines the component `system`. All the components that send commands
+  are configured to send them to the `:todos` topic controller."
+  {:main app/component
+   :footer (assoc footer/component :topic :todos)
+   :new-todo (assoc new-todo/component :topic :todos)
+   :todo-edit (assoc todo-edit/component :topic :todos)
+   :todo-item (assoc todo-item/component :topic :todos)
+   :timer-button (assoc timer-button/component :topic :todos)
+   :import-txt (assoc import-txt/component :topic :todos)
+   ;; :export-txt (assoc export-txt/component :topic :todos)
+   :export-txt export-txt/component
+   :todo-list todo-list/component
+   :toggle-todos (assoc toggle-todos/component :topic :todos)})
+
+
+#+end_src
+*** app.cljs
+:PROPERTIES:
+:header-args: :tangle src/keechma_todomvc/app.cljs
+:END:
+**** src app.cljs
+#+begin_src clojure :no-expand t :mkdirp yes
+(ns keechma-todomvc.app
+  "# Keechma TodoMVC App"
+  (:require [keechma-todomvc.components :as components]
+            [keechma-todomvc.controllers.todos :as todos]
+            [keechma-todomvc.subscriptions :as subscriptions]
+            [keechma.app-state :as app-state]))
+
+(defonce running-app (atom nil))
+
+;; ## App Definition
+
+(def app-definition
+  "Pulls the app together."
+  {:routes [[":status" {:status "all"}]]
+   :controllers {:todos (todos/->Controller)}
+   :components components/system
+   :subscriptions subscriptions/subscriptions
+   :html-element (.getElementById js/document "app")})
+
+;; ## App Lifecycle
+
+(defn start!
+  "Starts the app."
+  []
+  (reset! running-app (app-state/start! app-definition)))
+
+(defn restart!
+  "Restarts the app. `project.clj` contains a config setting for
+  `figwheel` requesting a call to this function whenever the code is
+  reloaded."
+  []
+  (if-let [current @running-app]
+    (app-state/stop! current start!)
+    (start!)))
+
+(defn dev-setup
+  "Enables console output for dev builds."
+  []
+  (when ^boolean js/goog.DEBUG
+    (enable-console-print!)
+    (println "dev mode")))
+
+;; ## Main
+
+(defn ^:export main
+  "Called from `index.html` to start the app. Exported because
+  `index.html` refers to it by name even in non-dev builds."
+  []
+  (dev-setup)
+  (start!))
+
+
+#+end_src
+**** file app.cljs
+(find-file-other-frame "./src/keechma_todomvc/app.cljs")
+*** other
+(find-file-other-frame "./src/keechma_todomvc/subscriptions.cljs")
+(find-file-other-frame "./src/keechma_todomvc/ui.cljs")
+(find-file-other-frame "./src/keechma_todomvc/util.cljs")
+(find-file-other-frame "./src/keechma_todomvc/edb.cljs")
+(find-file-other-frame "./src/keechma_todomvc/edb.clj")
+*** CANCELED worder.cljs
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+:header-args: :tangle src/keechma_todomvc/worder.cljs
+**** file worder.cljs
+(find-file-other-frame "src/keechma_todomvc/worder.cljs")
+**** src worder.cljs
+***** test version src worder.cljs
+#+begin_src clojure :no-expand t :mkdirp yes
+(ns ^:figwheel-hooks keechma-todomvc.worder
+  (:require
+   [keechma-todomvc.components :as components]
+   [keechma-todomvc.controllers.todos :as todos]
+   [keechma-todomvc.subscriptions :as subscriptions]
+   [reagent.core :as reagent :refer [atom]]
+   [keechma.app-state :as app-state]))
+
+(defn multiply [a b] (* a b))
+
+(defonce running-app (atom nil))
+
+(def app-definition
+  {:routes [["/:status" {:status "all"}]]
+   :controllers {:todos (todos/->Controller)}
+   :components components/system
+   :subscriptions subscriptions/subscriptions
+   :html-element (.getElementById js/document "app")})
+
+(defn start! []
+  (reset! running-app (app-state/start! app-definition)))
+
+(defn restart! []
+  (if-let [current @running-app]
+    (app-state/stop! current start!)
+    (start!)))
+
+(defn dev-setup []
+  (when ^boolean js/goog.DEBUG
+    (enable-console-print!)
+    (println "dev mode")))
+
+(defn ^:export main []
+  (dev-setup)
+  (start!))
+
+(defn ^:after-load on-reload []
+  (restart!))
+
+
+#+end_src
+***** keechma version src worder.cljs
+#+begin_src clojure :no-expand t :mkdirp yes :tangle no
+(ns ^:figwheel-hooks keechma-todomvc.worder
+  "# Keechma TodoMVC App"
+  (:require [keechma-todomvc.components :as components]
+            [keechma-todomvc.controllers.todos :as todos]
+            [keechma-todomvc.subscriptions :as subscriptions]
+            [keechma.app-state :as app-state]))
+
+
+(defn multiply [a b] (* a b))
+
+(defonce running-app (atom nil))
+
+;; ;; ## App Definition
+
+(def app-definition
+  "Pulls the app together."
+  {:routes [[":status" {:status "all"}]]
+   :controllers {:todos (todos/->Controller)}
+   :components components/system
+   :subscriptions subscriptions/subscriptions
+   :html-element (.getElementById js/document "app")})
+
+;; ## App Lifecycle
+
+(defn start!
+  "Starts the app."
+  []
+  (reset! running-app (app-state/start! app-definition)))
+
+(defn restart!
+  "Restarts the app. `project.clj` contains a config setting for
+  `figwheel` requesting a call to this function whenever the code is
+  reloaded."
+  []
+  (if-let [current @running-app]
+    (app-state/stop! current start!)
+    (start!)))
+
+(defn dev-setup
+  "Enables console output for dev builds."
+  []
+  (when ^boolean js/goog.DEBUG
+    (enable-console-print!)
+    (println "dev mode")))
+
+;; ;; ## Main
+
+(defn ^:export main
+  "Called from `index.html` to start the app. Exported because
+  `index.html` refers to it by name even in non-dev builds."
+  []
+  (dev-setup)
+  (start!))
+
+
+(dev-setup)
+(start!)
+(println "This text is printed from src/keechma_todomvc/worder.cljs. Go ahead and edit it and see reloading in action.")
+
+
+#+end_src
+***** src worder.cljs
+#+begin_src clojure :no-expand t :mkdirp yes :tangle no
+(ns ^:figwheel-hooks keechma-todomvc.worder
+  "# Keechma TodoMVC App"
+  (:require [keechma-todomvc.components :as components]
+            [keechma-todomvc.controllers.todos :as todos]
+            [keechma-todomvc.subscriptions :as subscriptions]
+            [goog.dom :as gdom]
+            [reagent.core :as reagent :refer [atom]]
+            [reagent.dom :as rdom]
+            [keechma.app-state :as app-state]))
+
+;; (ns ^:figwheel-hooks keechma-todomvc.worder
+;;   (:require
+;;    [goog.dom :as gdom]
+;;    [reagent.core :as reagent :refer [atom]]
+;;    [reagent.dom :as rdom]))
+
+(defn multiply [a b] (* a b))
+
+(defonce running-app (atom nil))
+
+;; ;; ## App Definition
+
+(def app-definition
+  "Pulls the app together."
+  {:routes [[":status" {:status "all"}]]
+   :controllers {:todos (todos/->Controller)}
+   :components components/system
+   :subscriptions subscriptions/subscriptions
+   :html-element (.getElementById js/document "app")})
+
+;; ## App Lifecycle
+
+(defn start!
+  "Starts the app."
+  []
+  (reset! running-app (app-state/start! app-definition)))
+
+(defn restart!
+  "Restarts the app. `project.clj` contains a config setting for
+  `figwheel` requesting a call to this function whenever the code is
+  reloaded."
+  []
+  (if-let [current @running-app]
+    (app-state/stop! current start!)
+    (start!)))
+
+(defn dev-setup
+  "Enables console output for dev builds."
+  []
+  (when ^boolean js/goog.DEBUG
+    (enable-console-print!)
+    (println "dev mode")))
+
+;; ;; ## Main
+
+(defn ^:export main
+  "Called from `index.html` to start the app. Exported because
+  `index.html` refers to it by name even in non-dev builds."
+  []
+  (dev-setup)
+  (start!))
+
+(println "This text is printed from src/keechma_todomvc/worder.cljs. Go ahead and edit it and see reloading in action.")
+
+;; (defn multiply [a b] (* a b))
+
+;; define your app data so that it doesn't get over-written on reload
+(defonce app-state (atom {:text "Hello world!"}))
+
+(defn get-app-element []
+  (gdom/getElement "app"))
+
+(defn hello-world []
+  [:div
+   [:h1 (:text @app-state)]
+   [:h3 "Edit this in src/keechma_todomvc/worder.cljs and watch it change!"]])
+
+(defn mount [el]
+  (rdom/render [hello-world] el))
+
+(defn mount-app-element []
+  (when-let [el (get-app-element)]
+    (mount el)))
+
+;; conditionally start your application based on the presence of an "app" element
+;; this is particularly helpful for testing this ns without launching the app
+(mount-app-element)
+;; (dev-setup)
+;; (start!)
+
+;; specify reload hook with ^:after-load metadata
+(defn ^:after-load on-reload []
+  (mount-app-element)
+  ;; (dev-setup)
+  ;; optionally touch your app-state to force rerendering depending on
+  ;; your application
+  ;; (swap! app-state update-in [:__figwheel_counter] inc)
+)
+
+;; (defn ^:after-load on-reload []
+;;   (restart!))
+#+end_src
+***** CANCELED original figwheel template
+#+begin_src clojure :no-expand t :mkdirp yes :tangle no 
+(ns ^:figwheel-hooks keechma-todomvc.worder
+  (:require
+   [goog.dom :as gdom]
+   [reagent.core :as reagent :refer [atom]]
+   [reagent.dom :as rdom]))
+
+(println "This text is printed from src/keechma_todomvc/worder.cljs. Go ahead and edit it and see reloading in action.")
+
+(defn multiply [a b] (* a b))
+
+;; define your app data so that it doesn't get over-written on reload
+(defonce app-state (atom {:text "Hello world!"}))
+
+(defn get-app-element []
+  (gdom/getElement "app"))
+
+(defn hello-world []
+  [:div
+   [:h1 (:text @app-state)]
+   [:h3 "Edit this in src/keechma_todomvc/worder.cljs and watch it change!"]])
+
+(defn mount [el]
+  (rdom/render [hello-world] el))
+
+(defn mount-app-element []
+  (when-let [el (get-app-element)]
+    (mount el)))
+
+;; conditionally start your application based on the presence of an "app" element
+;; this is particularly helpful for testing this ns without launching the app
+(mount-app-element)
+
+;; specify reload hook with ^:after-load metadata
+(defn ^:after-load on-reload []
+  (mount-app-element)
+  ;; optionally touch your app-state to force rerendering depending on
+  ;; your application
+  ;; (swap! app-state update-in [:__figwheel_counter] inc)
+)
+#+end_src
+**** repl
+
+# (ns ^:figwheel-hooks keechma-todomvc.worder
+(require `[keechma-todomvc.worder :as worder-main]
+
+(in-ns `keechma-todomvc.worder)
+**** exampl
+(find-file-other-frame "./src/keechma_todomvc/app.cljs")
+** src components
+*** components/app.cljs
+:PROPERTIES:
+:header-args: :tangle ./src/keechma_todomvc/components/app.cljs
+:END:
+**** file components/app.cljs
+(find-file-other-frame "./src/keechma_todomvc/components/app.cljs")
+**** src components/app.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.app
+  "# Main app component"
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub> <cmd]]))
+
+
+(defn render
+  "## Renders the top level UI
+
+  Some elements are rendered inline, others are implemented as
+  `components`. Each `component` will have its own `context` provided.
+
+### Component Deps
+
+- `:new-todo` top field where new `todos` are entered
+- `:toggle-todos` checkbox to the left of `:new-todo`
+- `:todo-list` main body list of `todos`
+- `:footer` active count, filtering, clearing
+
+### Subscription Deps
+
+- `:has-todos?` returns true if there are any todos in the EntityDB."
+  [ctx]
+  [:<>
+   [:section.todoapp
+    [:header.header
+     [:h1 "Worder"]
+     [:div.export-panel
+      [comp> ctx :import-txt]
+      [comp> ctx :import-txt {:path "words-ung-ua.txt"
+                              :title "📖Jung UA"}]
+
+      ]
+     [comp> ctx :new-todo]]
+    (when (sub> ctx :has-todos?)
+      [:<>
+       [:section.main
+        [comp> ctx :toggle-todos]
+        [comp> ctx :todo-list]]
+       [comp> ctx :footer]])]
+
+    [:div.export-panel
+        [comp> ctx :export-txt {:title "💾 Export to text"
+                                :sep "\t"
+                                :eof "\n"
+                                :ext ".txt"}]
+        [comp> ctx :export-txt {:title "💾 Export to CSV"
+                                :sep ";"
+                                :eof "\n"
+                                :ext ".csv"}]]
+   [:footer.info
+    [:p "Double-click to edit a Word"]
+    [:p
+     [:a {:href "https://keechma.com"} "Keechma"] " "
+     [:a {:href "https://www.linkedin.com/in/buyn-max"} "Freeman"]]]])
+
+(def component
+  (<comp :renderer render
+         :component-deps [:new-todo
+                          :toggle-todos
+                          :todo-list
+                          :import-txt
+                          :export-txt
+                          :footer]
+         :subscription-deps [:has-todos?]))
+
+#+end_src
+
+**** exempls
+(find-file-other-frame "~/Dev/ClojureScript/tutorials/my-cljs-project/example-todomvc/src/keechma_todomvc/components/app.cljs")
+**** CANCELED arhiv
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+***** 01 src components/app.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.app
+  "# Main app component"
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub>]]))
+
+(defn render
+  "## Renders the top level UI
+
+  Some elements are rendered inline, others are implemented as
+  `components`. Each `component` will have its own `context` provided.
+
+### Component Deps
+
+- `:new-todo` top field where new `todos` are entered
+- `:toggle-todos` checkbox to the left of `:new-todo`
+- `:todo-list` main body list of `todos`
+- `:footer` active count, filtering, clearing
+
+### Subscription Deps
+
+- `:has-todos?` returns true if there are any todos in the EntityDB."
+  [ctx]
+  [:<>
+   [:section.todoapp
+    [:header.header
+     [:h1 "Worder"]
+     [comp> ctx :new-todo]]
+    (when (sub> ctx :has-todos?)
+      [:<>
+       [:section.main
+        [comp> ctx :toggle-todos]
+        [comp> ctx :todo-list]]
+       [comp> ctx :footer]])]
+   [:footer.info
+    [:p "Double-click to edit a todo"]
+    [:p
+     [:a {:href "https://keechma.com"} "Keechma"] " "
+     [:a {:href "http://todomvc.com"} "TodoMVC"]]]])
+
+(def component
+  (<comp :renderer render
+         :component-deps [:new-todo
+                          :toggle-todos
+                          :todo-list
+                          :footer]
+         :subscription-deps [:has-todos?]))
+
+#+end_src
+
+
+***** old
+     [comp> ctx :timer-button]
+                          :timer-button
+     [:h1 "Worder"]
+     ;; [comp> ctx :timer-button]
+     [comp> ctx :new-todo]]
+
+*** components/todo_edit.cljs
+:PROPERTIES:
+:header-args: :tangle ./src/keechma_todomvc/components/todo_edit.cljs
+:END:
+**** file
+(find-file-other-frame "./src/keechma_todomvc/components/todo_edit.cljs")
+**** src
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.todo-edit
+  "# Todo Edit component"
+  (:require [keechma-todomvc.ui :refer [<cmd <comp sub>]]
+            [keechma-todomvc.util :refer [is-enter? is-esc?]]
+            [reagent.core :as reagent]))
+
+(defn form-3-render
+  "## Renders an Edit Field
+
+### Form 3 render function
+
+  Returns a `reagent class` created from a map that allows us to
+  provide additional component data to `reagent` including
+  implementations for `react lifecycle functions` like
+  `:component-did-mount`.
+
+### Subscription Deps
+
+- `:edit-todo` returns the `todo` currently being edited, or nil
+
+### Note
+
+  This component is using a `form 3` render function to demonstrate
+  the additional flexibility it allows. In this case, we could get the
+  same effect by setting the `:auto-focus` attribute on the
+  `:input.edit` element to `true` within a `form 2` render function."
+  [ctx]
+  (let [edit-todo (sub> ctx :edit-todo)
+        todo-title (reagent/atom (:title edit-todo))
+        handle-change #(reset! todo-title (.. % -target -value))
+        update #(<cmd ctx :confirm-edit (assoc edit-todo :title @todo-title))
+        cancel #(<cmd ctx :cancel-edit)
+        handle-key-down #(let [key-code (.-keyCode %)]
+                           (when (is-enter? key-code) (update))
+                           (when (is-esc? key-code) (cancel)))
+        render (fn []
+                 [:input.edit {:value @todo-title
+                               :on-blur update
+                               :on-change handle-change
+                               :on-key-down handle-key-down}])
+        focus-input #(let [node (reagent/dom-node %)
+                           length (count (.-value node))]
+                       (reset! todo-title (str @todo-title "\t-\t"))
+                       (.focus node)
+                       (.setSelectionRange node length length))]
+    (reagent/create-class
+     {:display-name "todo-edit"
+      :reagent-render render
+      :component-did-mount focus-input})))
+
+(def component
+  (<comp :renderer form-3-render
+         :subscription-deps [:edit-todo]))
+#+end_src
+**** exempl
+(find-file-other-frame "~/Dev/ClojureScript/tutorials/my-cljs-project/example-todomvc/src/keechma_todomvc/components/todo_edit.cljs")
+
+*** components/timer_button.cljs
+:PROPERTIES:
+:header-args: :tangle ./src/keechma_todomvc/components/timer_button.cljs
+:END:
+**** file timer_button.cljs
+(find-file-other-frame "./src/keechma_todomvc/components/timer_button.cljs")
+**** src timer_button.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.timer-button
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub> <cmd]]
+            [reagent.core :as r]))
+
+(defn render [ctx todo]
+  (let [seconds (r/atom 0)
+        timer-id (r/atom nil)
+        start-ms (r/atom nil)
+        running? #(not (= @timer-id nil))
+        counter #(reset! seconds (/ (- (.now js/Date) @start-ms) 1000))
+        stop! (fn []
+                (counter)
+                (js/clearInterval @timer-id)
+                (reset! timer-id nil)
+                (reset! start-ms nil)
+                (<cmd ctx :start-edit todo)
+                (<cmd ctx
+                      :update-todo-time
+                      {:id (:id todo) :time @seconds :todo todo}))
+        start! (fn []
+                  (reset! start-ms (.now js/Date))
+                  (reset! timer-id (js/setInterval counter 100)))
+        toggle! #(if (running?) (stop!) (start!))]  
+    (fn []
+      [:div.timer {:class (when (running?) "running")}
+       [:button
+        {:on-click toggle!} 
+        (if (running?) "■ Stop" "▶ Start")]
+       [:span.seconds (str @seconds " sec")]])))
+
+(def component
+  (<comp :renderer render))
+#+end_src
+**** ИИ
+***** я изменил немного функцию и довай изменим логигику
+timer-button
+он должен состоять из двух элементов. и реагент атома.
+кнопка и отображаемое значение.
+кнопка запускает секудомер. повторное нажатие останавливает секундомер.
+количество прошедших секунд отображает во втором элементе.
+принцип работы создаём атом за пределами функции. 
+запоминет время сейчас
+и каждые 0.5 секунды высчитвает текушее время - запомненое.
+и помешает в атом.
+и довай сделаем это только на основе одно атома в котором будет конечный результат секунты.
+остальные перменные предлогаю сделать врмеными и не атомами. Чтоб не плодить сушности.
+отображение секунт сточностью до милесикунд через запятую
+***** 
+(defn render [ctx]
+  (let [seconds (r/atom 0)
+        timer-id (atom nil)
+        start-ts (atom nil)
+        toggle! (fn [_]
+                  (if @timer-id
+                    ;; Stop
+                    (do (js/clearInterval @timer-id)
+                        (reset! timer-id nil)
+                        (reset! start-ts nil))
+                    ;; Start
+                    (let [now (.now js/Date)]
+                      (reset! start-ts now)
+                      (reset! timer-id
+                              (js/setInterval
+                                (fn []
+                                  (let [elapsed (/ (- (.now js/Date) @start-ts) 1000)]
+                                    (reset! seconds (Math/floor elapsed))))
+                                500)))))]
+    
+    (fn []
+        [:div.timer
+          [:button
+            {:on-click triger-fn}
+            (if @running? "■ Stop" "▶ Start")]
+          [:span.seconds (str @seconds " sec.")]])))
+
+***** хочу сделать новый компонент
+timer-button
+он должен состоять из двух элементов. и реагент атома.
+кнопка и отображаемое значение.
+кнопка запускает секудомер. повторное нажатие останавливает секундомер.
+количество прошедших секунд отображает во втором элементе.
+принцип работы создаём атом за пределами функции. 
+запоминет время сейчас
+и каждые 0.5 секунды высчитвает текушее время - запомненое.
+и помешает в атом.
+**** CANCELED arhiv
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+***** 02 src timer_button.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.timer-button
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub>]]
+            [reagent.core :as r]))
+
+(defn render [_ctx]
+  (let [seconds (r/atom 0)
+        timer-id (r/atom nil)
+        stop! (fn [] (do (js/clearInterval @timer-id)
+                 (reset! timer-id nil)))
+        start! (fn [] (let [start-ms (.now js/Date)]
+                 (reset! timer-id
+                       (js/setInterval
+                        (fn []
+                          (let [elapsed (/ (- (.now js/Date) start-ms) 1000)]
+                            (reset! seconds elapsed)))
+                        100))))
+        toggle! (fn [_] (if @timer-id (stop!) (start!)))]  
+
+    (fn []
+      [:div.timer
+       [:button
+        {:on-click toggle!} 
+        (if @timer-id "■ Stop" "▶ Start")]
+       [:span.seconds (str @seconds " sec")]])))
+
+(def component
+  (<comp :renderer render))
+#+end_src
+***** src 01 timer_button.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.timer-button
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub>]]
+            [reagent.core :as r]))
+
+(defn render [_ctx]
+  (let [seconds (r/atom 0)    ;; здесь живёт только результат
+        timer-id (r/atom nil)
+        toggle! (fn [_]
+           (if @timer-id
+             ;; Stop
+             (do (js/clearInterval @timer-id)
+                 (reset! timer-id nil))
+             ;; Start
+             (let [start-ms (.now js/Date)]
+               (reset! timer-id
+                       (js/setInterval
+                        (fn []
+                          (let [elapsed (/ (- (.now js/Date) start-ms) 1000)]
+                            (reset! seconds elapsed)))
+                        100)))))]  
+
+    (fn []
+      [:div.timer
+       [:button
+        {:on-click toggle!} 
+        (if @timer-id "■ Stop" "▶ Start")]
+       [:span.seconds (str @seconds " sec")]])))
+
+(def component
+  (<comp :renderer render))
+#+end_src
+***** src error
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.timer-button
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub>]]
+            [reagent.core :as r]))
+
+(defn render [_ctx]
+  (let [seconds (r/atom 0)
+        timer-id (atom nil)
+        activ? (= @timer-id nil) 
+        start-ms (atom 0)
+        toggle! (fn [_]
+           (if @timer-id
+             ;; Stop
+             (do (js/clearInterval @timer-id)
+                 (reset! timer-id nil)
+                 (let [elapsed (/ (- (.now js/Date) @start-ms) 1000)]
+                    (reset! seconds elapsed)))
+             ;; Start
+             (do (reset! @start-ms (.now js/Date))
+                 (reset! timer-id
+                      (js/setInterval
+                        (fn []
+                          (let [elapsed (/ (- (.now js/Date) @start-ms) 1000)]
+                            (reset! seconds elapsed)))
+                        100)))))]  
+    (fn []
+      [:div.timer
+       [:button
+        {:on-click toggle!} 
+        (if (activ?) "■ Stop" "▶ Start")]
+       [:span.seconds (str @seconds " sec")]])))
+
+(def component
+  (<comp :renderer render))
+#+end_src
+***** src 02
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.timer-button
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub>]]
+            [reagent.core :as r]))
+
+(defn render [_ctx]
+  (let [seconds (r/atom 0)    ;; здесь живёт только результат
+        timer-id (atom nil)
+        togle! (fn [_]
+           (if @timer-id
+             ;; Stop
+             (do (js/clearInterval @timer-id)
+                 (reset! timer-id nil))
+             ;; Start
+             (let [start-ms (.now js/Date)]
+               (reset! timer-id
+                       (js/setInterval
+                        (fn []
+                          (let [elapsed (/ (- (.now js/Date) start-ms) 1000)]
+                            (reset! seconds elapsed)))
+                        100)))))]  
+
+    (fn []
+      [:div.timer
+       [:button
+        {:on-click togle!} 
+        (if @timer-id "■ Stop" "▶ Start")]
+       [:span.seconds
+        (str @seconds " sec")
+        ;; (-> @seconds
+        ;;     (* 100)
+        ;;     (Math/round)
+        ;;     (/ 100)
+        ;;     (str " sec"))
+        ]])))
+(def component
+  (<comp :renderer render
+         ;; :component-deps [:new-todo
+         ;;                  :toggle-todos
+         ;;                  :todo-list
+         ;;                  :footer]
+         ;; :subscription-deps [:has-todos?]
+         ))
+#+end_src
+***** src 01
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.timer-button
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub>]]
+            [reagent.core :as r]))
+
+(defn render [ctx]
+  (let [running? (r/atom false)
+          seconds  (r/atom 0)
+          timer-id (r/atom nil)]
+      (fn []
+        [:div.timer
+          [:button
+            {:on-click
+              (fn [_]
+                (if @running?
+                  (do
+                    (swap! running? not)
+                    (js/clearInterval @timer-id)
+                    (reset! timer-id nil))
+                  (do
+                    (reset! seconds 0)
+                    (swap! running? not)
+                    (reset! timer-id
+                            (js/setInterval
+                              #(swap! seconds inc)
+                              1000)))))}
+            (if @running? "■ Stop" "▶ Start")]
+          [:span.seconds (str @seconds " sec.")]])))
+
+(def component
+  (<comp :renderer render
+         ;; :component-deps [:new-todo
+         ;;                  :toggle-todos
+         ;;                  :todo-list
+         ;;                  :footer]
+         ;; :subscription-deps [:has-todos?]
+         ))
+#+end_src
+**** reple
+***** atom
+
+(def timer-id (reagent.core/atom nil))
+
+(= @timer-id nil)
+
+(reset! timer-id 3)
+
+@timer-id
+
+(= @timer-id nil)
+
+(def running? (not (= timer-id nil)))
+running?
+(running?)
+{:class (when (running?) "running")}
+***** command
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub> <cmd]]
+
+(keechma-todomvc.ui\<cmd 2 :update-todo-time 12 13))
+***** js
+
+(js/console.log
+  (clj->js
+    (-> @keechma.app-state/app-db :entities :todos)))
+***** get app
+(def app-db (-> keechma-todomvc.app/running-app deref :app-db))
+(keechma-todomvc.edb/get-collection @app-db :todos :list)
+
+:todos-by-status
+
+(def app-db (-> keechma-todomvc.app/running-app deref :app-db))
+
+
+
+;; вывести размер todo-коллекции
+(-> @app-db (get-in [:entities :todos :entities]) count)
+
+;; вывести первый todo
+(-> @app-db (get-in [:entities :todos :entities]) first val)
+(println "Keys in app-db:" (keys @app-db))
+
+
+
+@(-> keechma-todomvc.app/running-app deref :app-db)
+(def app-db (-> keechma-todomvc.app/running-app deref :app-db))
+@app-db
+(require '[keechma-todomvc.edb :as edb])
+(edb/get-collection @app-db :todos :list)
+(edb/get-item-by-id @app-db :todos "todo123")
+***** todos-by-status
+
+(def app-db (-> keechma-todomvc.app/running-app deref :app-db))
+(keechma-todomvc.edb/get-collection @app-db :todos :list)
+
+(defn todos-by-status
+  "Returns all `todos` with a `status`."
+  [app-db status]
+  (let [todos (edb/get-collection app-db :todos :list)]
+    (case status
+      :completed (filter :completed todos)
+      :active (filter (complement :completed) todos)
+      :all todos)))
+
+:todos-by-status
+
+(find-file-other-frame "./src/keechma_todomvc/components/todo_list.cljs")
+
+(sub> app-db :todos-by-status :all)
+
+(keechma-todomvc.ui/sub> app-db :todos-by-status "all")
+
+(def app-db (-> keechma-todomvc.app/running-app deref :app-db))
+(keechma-todomvc.edb/get-collection app-db :todos :list)
+
+(keechma-todomvc.edb/get-collection app-db :todos :list)
+
+(-> app-db :entities :todos)   
+(-> app-db :entities)   
+
+(-> keechma-todomvc.app/running-app :entities)
+
+
+(:app-db (deref keechma-todomvc.app/running-app))
+(:entities (:app-db @keechma-todomvc.app/running-app))
+*** components/import_txt.cljs
+:PROPERTIES:
+:header-args: :tangle ./src/keechma_todomvc/components/import_txt.cljs
+:END:
+**** file import_txt.cljs
+(find-file-other-frame "./src/keechma_todomvc/components/import_txt.cljs")
+**** src import_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.import-txt
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub> <cmd]]
+            [reagent.core :as r]
+            [clojure.string :as str]))
+
+(defn process-lines [ctx content]
+  (doseq [line (str/split content #"\n")]
+    (let [t (str/trim line)]
+      (when-not (empty? t)
+        (<cmd ctx :create-todo t)))))
+
+(defn import-from-path [ctx path]
+  ;; путь может быть абсолютный для разработки
+  ;; или относительный к ./txt/ при проде
+  (let [url (if (.startsWith path "/")
+              path
+              (str "./txt/" path))]
+    (-> (js/fetch url)
+        (.then (fn [resp]
+                 (if (.-ok resp)
+                   (.text resp)
+                   (throw (js/Error. (str "HTTP error: " (.-status resp)))))))
+        (.then #(process-lines ctx %))
+        (.catch #(js/console.error "Import failed:" %)))))
+
+(defn import-from-dialog [ctx e]
+  (let [file (-> e .-target .-files (aget 0))
+        reader (js/FileReader.)]
+    (set! (.-onload reader)
+          (fn [evt]
+            (let [content (.. evt -target -result)]
+              (process-lines ctx content))))
+    (.readAsText reader file)))
+
+(defn render [ctx {:keys [path title]
+                   :or {title "📎 Import from file"}}]
+  (let [file-input (r/atom nil)]
+    (fn []
+      [:div.import-wrapper
+       (if path
+         [:button {:on-click #(import-from-path ctx path)} title]
+         [:<>
+          [:input {:type "file"
+                   :style {:display "none"}
+                   :ref #(reset! file-input %)
+                   :on-change #(import-from-dialog ctx %)}]
+          [:button {:on-click #(.click @file-input)} title]])])))
+
+(def component
+  (<comp :renderer render))
+
+#+end_src
+**** CANCELED arhiv
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+***** 04 src import_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.import-txt
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub> <cmd]]
+            [reagent.core :as r]
+            [clojure.string :as str]))
+
+(defn process-lines [ctx content]
+  (doseq [line (str/split content #"\n")]
+    (let [t (str/trim line)]
+      (when-not (empty? t)
+        (<cmd ctx :create-todo t)))))
+
+(defn import-from-path [ctx path]
+  ;; путь может быть абсолютный для разработки
+  ;; или относительный к /txt/ при проде
+  (let [url (if (.startsWith path "/")
+              path
+              (str "./txt/" path))]
+    (-> (js/fetch url)
+        (.then (fn [resp]
+                 (if (.-ok resp)
+                   (.text resp)
+                   (throw (js/Error. (str "HTTP error: " (.-status resp)))))))
+        (.then #(process-lines ctx %))
+        (.catch #(js/console.error "Import failed:" %)))))
+
+(defn import-from-dialog [ctx e]
+  (let [file (-> e .-target .-files (aget 0))
+        reader (js/FileReader.)]
+    (set! (.-onload reader)
+          (fn [evt]
+            (let [content (.. evt -target -result)]
+              (process-lines ctx content))))
+    (.readAsText reader file)))
+
+(defn render [ctx {:keys [path title]
+                   :or {title "📎 Import from file"}}]
+  (let [file-input (r/atom nil)]
+    (fn []
+      [:div.import-wrapper
+       (if path
+         [:button {:on-click #(import-from-path ctx path)} title]
+         [:<>
+          [:input {:type "file"
+                   :style {:display "none"}
+                   :ref #(reset! file-input %)
+                   :on-change #(import-from-dialog ctx %)}]
+          [:button {:on-click #(.click @file-input)} title]])])))
+
+(def component
+  (<comp :renderer render))
+
+#+end_src
+***** 03 src import_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.import-txt
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub> <cmd]]
+            [reagent.core :as r]))
+
+(defn import-file [ctx e]
+  (let [file (-> e .-target .-files (aget 0))
+        reader (js/FileReader.)
+        onload-evt (fn [evt]
+            (let [content (.. evt -target -result)
+                  lines (.split content "\n")]
+              (doseq [l lines]
+                (let [t (clojure.string/trim l)]
+                  (when-not (empty? t)
+                    (<cmd ctx :create-todo t))))))]
+        (set! (.-onload reader) onload-evt)
+        (println (.readAsText reader file))))
+
+(defn render [ctx]
+  (let [file-input (r/atom nil)]  
+    (fn []
+      [:div
+        [:input {:type "file"
+                :style {:display "none"}
+                :ref #(reset! file-input %)
+                :on-change #(import-file ctx %)}]
+        [:button {:on-click #(.click @file-input)}
+        "📎Import from file"]])))
+
+(def component
+  (<comp :renderer render))
+#+end_src
+***** 02 src import_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.import-txt
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub> <cmd]]
+            [reagent.core :as r]))
+
+(defn import-file [ctx e]
+  (let [file (-> e .-target .-files (aget 0))
+        reader (js/FileReader.)
+        onload-evt (fn [evt]
+            (let [content (.. evt -target -result)
+                  lines (.split content "\n")]
+              (doseq [l lines]
+                (let [t (clojure.string/trim l)]
+                  (when-not (empty? t)
+                    (<cmd ctx :create-todo t))))))]
+        (set! (.-onload reader) onload-evt)
+        (println (.readAsText reader file))))
+
+(defn render [ctx]
+  (let [file-input (r/atom nil)]  
+    (fn []
+      [:div
+        [:input {:type "file"
+                :style {:display "none"}
+                :ref #(reset! file-input %)
+                :on-change #(import-file ctx %)}]
+        [:button {:on-click #(.click @file-input)}
+        "📎Import from file"]])))
+
+(def component
+  (<comp :renderer render))
+#+end_src
+***** 01 src import_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.import-txt
+  (:require [keechma-todomvc.ui :refer [<comp comp> sub> <cmd]]
+            [reagent.core :as r]))
+
+(defn import-file [ctx e]
+  (let [file (-> e .-target .-files (aget 0))
+        reader (js/FileReader.)]
+    (set! (.-onload reader)
+          (fn [evt]
+            (let [content (.. evt -target -result)
+                  lines (.split content "\n")]
+              (doseq [l lines]
+                (let [t (clojure.string/trim l)]
+                  (when-not (empty? t)
+                    (<cmd ctx :create-todo t)))))))
+    (.readAsText reader file)))
+
+(defn render [ctx]
+  (let [file-input (r/atom nil)]  
+    (fn []
+      [:div
+        [:input {:type "file"
+                :style {:display "none"}
+                :ref #(reset! file-input %)
+                :on-change #(import-file ctx %)}]
+        [:button {:on-click #(.click @file-input)}
+        "Import from file"]])))
+
+(def component
+  (<comp :renderer render))
+#+end_src
+**** reple
+*** components/export_txt.cljs
+:PROPERTIES:
+:header-args: :tangle ./src/keechma_todomvc/components/export_txt.cljs
+:END:
+**** file export_txt.cljs
+(find-file-other-frame "./src/keechma_todomvc/components/export_txt.cljs")
+**** src export_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.export-txt
+  (:require [keechma-todomvc.ui :refer [<comp sub> route>]]
+            [clojure.string :as str]))
+
+(defn export-file [todos {:keys [sep ext eof]}]
+  (let [lines (map (fn [{:keys [title time]}]
+                     (str title sep (or time 0)))
+                   todos)
+        content (str/join eof lines)
+        blob (js/Blob. #js [content] #js {:type "text/plain;charset=utf-8"})
+        url (.createObjectURL js/URL blob)
+        a (.createElement js/document "a")]
+    ;; создаём ссылку
+    (set! (.-href a) url)
+    (set! (.-download a)
+          (str "words-" (.toISOString (js/Date.)) ext))
+    ;; нужно добавить элемент в DOM, иначе Firefox не среагирует
+    (.appendChild (.-body js/document) a)
+    ;; "клик" по ссылке
+    (.click a)
+    ;; удаляем элемент из DOM и освобождаем URL чуть позже
+    (.remove a)
+    (js/setTimeout #(js/URL.revokeObjectURL url) 2000)))
+
+(defn render [ctx {:keys [title] :as props}]
+  (let [route-status (keyword (route> ctx :status))
+        todos (sub> ctx :todos-by-status route-status)]
+    [:button.export-btn
+     {:on-click #(export-file todos props)
+      :title "Export current list to text file"}
+     title]))
+
+(def component
+  (<comp :renderer render
+         :subscription-deps [:todos-by-status]))
+
+
+#+end_src
+
+
+#+end_src
+**** CANCELED arhiv
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+***** 03 src export_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.export-txt
+  (:require [keechma-todomvc.ui :refer [<comp sub> route>]]
+            [clojure.string :as str]))
+
+(defn export-file [todos]
+  (let [lines (map (fn [{:keys [title time]}]
+                     (str title "\t" (or time 0)))
+                   todos)
+        content (str/join "\n" lines)
+        blob (js/Blob. #js [content] #js {:type "text/plain;charset=utf-8"})
+        url (.createObjectURL js/URL blob)
+        a (.createElement js/document "a")]
+    ;; создаём ссылку
+    (set! (.-href a) url)
+    (set! (.-download a)
+          (str "words-" (.toISOString (js/Date.)) ".txt"))
+    ;; нужно добавить элемент в DOM, иначе Firefox не среагирует
+    (.appendChild (.-body js/document) a)
+    ;; "клик" по ссылке
+    (.click a)
+    ;; удаляем элемент из DOM и освобождаем URL чуть позже
+    (.remove a)
+    (js/setTimeout #(js/URL.revokeObjectURL url) 2000)))
+
+(defn render [ctx]
+  (let [route-status (keyword (route> ctx :status))
+        todos (sub> ctx :todos-by-status route-status)]
+    [:button.export-btn
+     {:on-click #(export-file todos)
+      :title "Export current list to text file"}
+     "💾 Export to text"]))
+
+(def component
+  (<comp :renderer render
+         :subscription-deps [:todos-by-status]))
+
+
+#+end_src
+
+
+#+end_src
+***** 02 src export_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.export-txt
+  (:require [keechma-todomvc.ui :refer [<comp sub> route>]]
+            [clojure.string :as str]))
+
+(defn export-file [todos]
+  (let [lines (map (fn [{:keys [title time]}]
+                     (str title "\t" (or time 0)))
+                   todos)
+        content (str/join "\n" lines)
+        blob (js/Blob. #js [content] #js {:type "text/plain;charset=utf-8"})
+        url (.createObjectURL js/URL blob)
+        a (.createElement js/document "a")]
+    (set! (.-href a) url)
+    (set! (.-download a)
+          (str "todos-" (.toISOString (js/Date.)) ".txt"))
+    (.click a)
+    (.revokeObjectURL js/URL url)))
+
+(defn render [ctx]
+  (let [route-status (keyword (route> ctx :status))
+        todos (sub> ctx :todos-by-status route-status)]
+    [:button.export-btn
+     {:on-click #(export-file @todos)
+      :title "Export current list to text file"}
+     "💾 Export to text"]))
+
+(def component
+  (<comp :renderer render
+         :subscription-deps [:todos-by-status]))
+
+
+#+end_src
+***** 00 src export_txt.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.export-txt
+  (:require [keechma-todomvc.ui :refer [<comp sub> route>]]
+            [clojure.string :as str]))
+
+(defn export-file [todos]
+  (let [lines (map (fn [{:keys [title time]}]
+                     (str title "\t" (or time 0)))
+                   todos)
+        content (str/join "\n" lines)
+        blob (js/Blob. #js [content] #js {:type "text/plain"})
+        url (.createObjectURL js/URL blob)
+        a (.createElement js/document "a")]
+    (set! (.-href a) url)
+    (set! (.-download a) "words.txt")
+    (.click a)
+    (.revokeObjectURL js/URL url)))
+
+(defn render [ctx]
+  (let [route-status (keyword (route> ctx :status))
+        todos (sub> ctx :todos-by-status route-status)]
+    [:div.timer
+      [:button {:on-click #(export-file @todos)}
+      "💾 Export to text"]]))
+
+(def component
+  (<comp :renderer render
+         :subscription-deps [:todos-by-status]))
+
+#+end_src
+**** reple
+*** components/todo_item.cljs
+:PROPERTIES:
+:header-args: :tangle ./src/keechma_todomvc/components/todo_item.cljs
+:END:
+**** file components/todo_item.cljs
+(find-file-other-frame "./src/keechma_todomvc/components/todo_item.cljs")
+**** src components/todo_item.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.todo-item
+  "# Todo Item component"
+  (:require [keechma-todomvc.ui :refer [<cmd <comp comp>]]))
+
+(defn render
+  "## Renders a todo list item
+
+  The item's content includes:
+
+- a `checkbox` for toggling `:completed`
+- a `label` displaying the `:title`
+- a `button` to delete the item
+
+If the item is currently being edited, overlays a `todo-edit` component.
+
+### Component Deps
+
+- `:todo-edit` presents ui to edit a `todo`'s title
+
+### Arguments
+
+  This render function has arguments in addition to `ctx`. Values for
+  those are provided at the site where this component is included
+  within another, in this case `:todo-list`. If this were a `form-2`
+  render function, the returned function would have only `todo` and
+  `is-editing?` as arguments."
+  [ctx todo is-editing?]
+  [:li {:class [(when is-editing? :editing)
+                (when (:completed todo) :completed)]}
+   [:div.view
+    ;; {:on-double-click #(<cmd ctx :start-edit todo)}
+    [:input.toggle {:type :checkbox
+                    :checked (:completed todo)
+                    :on-change #(<cmd ctx :toggle-todo todo)}]
+    [:label (:title todo)]
+    [comp> ctx :timer-button todo]
+    [:button.destroy {:on-click #(<cmd ctx :delete-todo todo)}]]
+   (when is-editing?
+     [comp> ctx :todo-edit])])
+
+(def component
+  (<comp :renderer render
+         :component-deps [:todo-edit
+                          :timer-button]))
+
+#+end_src
+     
+**** exempls
+(find-file-other-frame "~/Dev/ClojureScript/tutorials/my-cljs-project/example-todomvc/src/keechma_todomvc/components/todo_item.cljs")
+*** components/new_todo.cljs
+:PROPERTIES:
+:header-args: :tangle ./src/keechma_todomvc/components/new_todo.cljs
+:END:
+**** file components/new_todo.cljs
+(find-file-other-frame "./src/keechma_todomvc/components/new_todo.cljs")
+**** src components/new_todo.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.components.new-todo
+  "# New Todo component"
+  (:require [keechma-todomvc.ui :refer [<cmd <comp]]
+            [keechma-todomvc.util :refer [is-enter?]]
+            [reagent.core :as reagent]))
+
+(defn form-2-render
+  "## Renders an input field for a new todo
+
+  Stores the pending new `title` inside a local `atom`. When the user
+  presses `enter`, sends a `:create-todo` command to the `todos`
+  controller to create the new `todo`.
+
+### Form 2 Render
+
+  A `form 2` render function sets up local state and returns a
+  rendering function from its first call. That `inner` rendering
+  function will be called each time `reagent` needs to render the
+  component. The arguments for the `inner` function are the same as
+  for the `form 2` render function except that the `ctx` argument is
+  not present. The local state can be used by the code in the `inner`
+  render function. It will persist until the component is unmounted."
+  [ctx]
+  (let [new-title (reagent/atom "")]
+    (fn []
+      [:input.new-todo
+       {:placeholder "What needs to be Word?"
+        :value @new-title
+        :auto-focus true
+        :on-change #(reset! new-title (.. % -target -value))
+        :on-key-down #(when (is-enter? (.-keyCode %))
+                        (<cmd ctx :create-todo @new-title)
+                        (reset! new-title ""))}])))
+
+(def component
+  (<comp :renderer form-2-render))
+
+#+end_src
+     
+**** exempls
+(find-file-other-frame "~/Dev/ClojureScript/tutorials/my-cljs-project/example-todomvc/src/keechma_todomvc/components/new_todo.cljs")
+*** other
+(find-file-other-frame "./src/keechma_todomvc/components/new_todo.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/toggle_todos.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/todo_list.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/footer.cljs")
+
+** src entities
+*** entities/todo.cljs
+:PROPERTIES:
+:header-args: :tangle ./src/keechma_todomvc/entities/todo.cljs
+:END:
+**** file entities/todo.cljs
+(find-file-other-frame "./src/keechma_todomvc/entities/todo.cljs")
+**** src entities/todo.cljs
+#+begin_src clojure :no-expand t :mkdirp yes 
+(ns keechma-todomvc.entities.todo
+  "# Todo Entities"
+  (:require [clojure.string :as str]
+            [keechma-todomvc.edb :as edb])
+  (:import [goog.ui IdGenerator]))
+
+;; ## Helpers
+
+(def id-generator (IdGenerator.))
+
+(defn id
+  "Returns a unique ID for a new todo."
+  []
+  (.getNextUniqueId id-generator))
+
+(defn valid-title?
+  "Returns `true` if `title` is a valid `todo` title."
+  [title]
+  (not (str/blank? title)))
+
+;; ## Subscription Support (Read)
+
+(defn todos-by-status
+  "Returns all `todos` with a `status`."
+  [app-db status]
+  (let [todos (edb/get-collection app-db :todos :list)]
+    (case status
+      :completed (filter :completed todos)
+      :active (filter (complement :completed) todos)
+      :all todos)))
+
+(defn edit-todo
+  "Returns the `todo` currently being edited."
+  [app-db]
+  (->> (get-in app-db [:kv :editing-id])
+       (edb/get-item-by-id app-db :todos)))
+
+;; ## Action Support (Write)
+
+;; ### Edit Management
+
+(defn start-edit
+  "Sets state: this `todo` is currently being edited."
+  [app-db {:keys [id] :as todo}]
+  (assoc-in app-db [:kv :editing-id] id))
+
+(defn cancel-edit
+  "Clears state: no `todo` is currently being edited."
+  [app-db]
+  (assoc-in app-db [:kv :editing-id] nil))
+
+(defn confirm-edit
+  "Updates `todo` if `new-todo` has a valid `title`."
+  [app-db {:keys [id title] :as new-todo}]
+  (assert id)
+  (if (valid-title? title)
+    (-> app-db
+        (cancel-edit)
+        (edb/insert-item :todos new-todo))
+    app-db))
+
+;; ### Create, Update, Delete Todos
+
+(defn create-todos
+  "Creates an empty `todos` list."
+  [app-db]
+  (edb/insert-collection app-db :todos :list []))
+
+(defn create-todo
+  "If `title` is valid, creates a new `todo` and inserts it at the
+  beginning of the `todo` list."
+  [app-db title]
+  (if (valid-title? title)
+    (let [todo {:id (str "todo" (id))
+                :completed false
+                :title title}]
+      (edb/prepend-collection app-db :todos :list [todo]))
+    app-db))
+
+(defn update-todo
+  "Merges new data into a `todo`. `patch-todo` must have an `:id`
+  value that is the `id` of the `todo` to be updated."
+  [app-db {:keys [id] :as patch-todo}]
+  (assert id)
+  (edb/insert-item app-db :todos patch-todo))
+
+(defn update-todo-time
+  "Updates the `:time` value on an existing todo item.
+  This handler expects a map with the `:todo`, `:id` and new `:time` value.
+  If the todo exists, a new todo map is created with the updated time
+  and stored back in the EntityDB.
+  Arguments:
+  - app-db: The current application state atom
+  - {:keys [id time todo]}: A map containing the todo ID and the new time (in seconds)
+  Returns:
+  - The updated `app-db` value
+  Notes:
+  - If `id` or `todo` is missing, the original `app-db` unchanged."
+  [app-db {:keys [id time todo]}]
+  (assert id)
+  (assert todo)
+  (let [updated-todo (assoc todo :time time)]
+    (edb/insert-item app-db :todos updated-todo)))
+
+(defn toggle-todo
+  "Toggles the `:completed` status of a saved `todo`."
+  [app-db todo]
+  (update-todo app-db (update todo :completed not)))
+
+(defn toggle-all
+  "Marks all `todos` as completed or not based on `completed?`."
+  [app-db completed?]
+  (reduce (fn [acc todo]
+            (update-todo acc (assoc todo :completed completed?)))
+          app-db
+          (todos-by-status app-db :all)))
+
+(defn delete-todo
+  "Removes a `todo` from the EntityDB."
+  [app-db {:keys [id] :as todo}]
+  (edb/remove-item app-db :todos id))
+
+(defn delete-completed
+  "Removes all completed `todos` from the EntityDB."
+  [app-db]
+  (reduce (fn [acc {:keys [id]}]
+            (edb/remove-item acc :todos id))
+          app-db
+          (todos-by-status app-db :completed)))
+
+;; ## Actions for keechma.controllers/dispatcher
+
+(defn actions
+  "Returns a mapping from `todo` topic `command` keywords to `action`
+  functions. The mapping is suitable for use by
+  `keechma.controller/dispatcher`.
+
+  Adapts the calling convention from the one used by
+  `keechma.controllers/dispatcher`:
+
+  `(action-fn app-db-atom args-vec)`
+
+  to one that is more natural for ClojureScript:
+
+  `(handler app-db-atom arg1 arg2 arg3 ...)`.
+
+  Combined with `<cmd` in `ui.cljs`, this allows natural-looking
+  arguments in calls to `<cmd` to be handled by a handler with a
+  natural looking argument vector in its definition. This insulates
+  app developers from the restriction against varags in protocol
+  functions that results in `keechma.ui-component/send-command`
+  supporting only exactly 2 or 3 args, the last one an optional
+  explicit vector of additional args.
+
+  The adapter also provides the side-effect of updating the `app-db`
+  with the result of each call, allowing the handlers to be written
+  and tested as pure functions that return the new `app-db` value."
+  []
+  (let [cmd-handlers {:start-edit start-edit
+                      :cancel-edit cancel-edit
+                      :confirm-edit confirm-edit
+                      :create-todo create-todo
+                      :delete-todo delete-todo
+                      :toggle-todo toggle-todo
+                      :toggle-all toggle-all
+                      :update-todo-time update-todo-time
+                      :delete-completed delete-completed}
+        action-adapter (fn [f]
+                         (fn [app-db args]
+                           (apply swap! app-db f args)))]
+    (reduce-kv (fn [acc k f]
+                 (assoc acc k (action-adapter f)))
+               {}
+               cmd-handlers)))
+
+#+end_src
+     
+**** exempls
+(find-file-other-frame "~/Dev/ClojureScript/tutorials/my-cljs-project/example-todomvc/src/keechma_todomvc/entities/todo.cljs")
+**** CANCELED archiv
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+***** 01 update-todo-time
+(defn update-todo-time
+  [app-db {:keys [id time]}]
+  ;; (assert id)
+  ;; (let [todo (edb/get-item-by-id app-db :todos id)
+  ;;       updated-todo (assoc todo :time time)]
+  ;;   (edb/insert-item app-db :todos updated-todo))
+  (println "test!!!!")
+  app-db)
+
+***** update-todo-time
+(defn update-todo-time
+  [app-db {:keys [id] :as patch-todo}]
+  ;; (assert id)
+  ;; (println patch-todo)
+  ;; (println time)
+  (println "test!")
+  ;; сохранить time внутри туду
+  ;; и новерно вызвать update-todo
+  )
+
+** src resources
+*** index.html
+:PROPERTIES:
+:header-args: :tangle ./resources/public/index.html
+:END:
+**** file
+(find-file-other-frame "./resources/public/index.html")
+**** src
+#+begin_src html :no-expand t :mkdirp yes 
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Worder • Keechma</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="css/style.css" rel="stylesheet" type="text/css">
+    <link rel="icon" href="https://clojurescript.org/images/cljs-logo-icon-32.png">
+  </head>
+  <body>
+    <div id="app"> 
+      <h2>requires browser support for Java script</h2>
+      <p>js app loading...</p>
+    </div> <!-- end of app div -->
+    <script src="js/app.js" type="text/javascript"></script>
+    <script>keechma_todomvc.app.main()</script>
+  </body>
+</html>
+#+end_src
+**** exampl
+(find-file-other-frame "/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/group-chat/resources/public/index.html")
+(find-file-other-frame "~/Dev/ClojureScript/tutorials/my-cljs-project/example-todomvc/resources/public/index.html")
+
+*** style.css
+:PROPERTIES:
+:header-args: :tangle ./resources/public/css/style.css
+:END:
+**** file style.css
+(find-file-other-frame "./resources/public/css/style.css")
+**** src style.css
+***** all
+#+begin_src css :no-expand t :mkdirp yes 
+/* Source: https://github.com/tastejs/todomvc-app-css/blob/v2.1.0/index.css */
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+button {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 100%;
+    vertical-align: baseline;
+    font-family: inherit;
+    font-weight: inherit;
+    color: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    line-height: 1.4em;
+    background: #f5f5f5;
+    color: #4d4d4d;
+    min-width: 230px;
+    max-width: 550px;
+    margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 300;
+}
+
+:focus {
+    outline: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+.todoapp {
+    background: #fff;
+    margin: 130px 0 40px 0;
+    position: relative;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2),
+                0 25px 50px 0 rgba(0, 0, 0, 0.1);
+}
+
+.todoapp input::-webkit-input-placeholder {
+    font-style: italic;
+    font-weight: 300;
+    color: #e6e6e6;
+}
+
+.todoapp input::-moz-placeholder {
+    font-style: italic;
+    font-weight: 300;
+    color: #e6e6e6;
+}
+
+.todoapp input::input-placeholder {
+    font-style: italic;
+    font-weight: 300;
+    color: #e6e6e6;
+}
+
+.todoapp h1 {
+    position: absolute;
+    top: -155px;
+    width: 100%;
+    font-size: 100px;
+    font-weight: 100;
+    text-align: center;
+    color: rgba(175, 47, 47, 0.15);
+    -webkit-text-rendering: optimizeLegibility;
+    -moz-text-rendering: optimizeLegibility;
+    text-rendering: optimizeLegibility;
+}
+
+.new-todo,
+.edit {
+    position: relative;
+    margin: 0;
+    width: 100%;
+    font-size: 24px;
+    font-family: inherit;
+    font-weight: inherit;
+    line-height: 1.4em;
+    border: 0;
+    color: inherit;
+    padding: 6px;
+    border: 1px solid #999;
+    box-shadow: inset 0 -1px 5px 0 rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.new-todo {
+    padding: 16px 16px 16px 60px;
+    border: none;
+    background: rgba(0, 0, 0, 0.003);
+    box-shadow: inset 0 -2px 1px rgba(0,0,0,0.03);
+}
+
+.main {
+    position: relative;
+    z-index: 2;
+    border-top: 1px solid #e6e6e6;
+}
+
+.toggle-all {
+    text-align: center;
+    border: none; /* Mobile Safari */
+    opacity: 0;
+    position: absolute;
+}
+
+.toggle-all + label {
+    width: 60px;
+    height: 34px;
+    font-size: 0;
+    position: absolute;
+    top: -52px;
+    left: -13px;
+    -webkit-transform: rotate(90deg);
+    transform: rotate(90deg);
+}
+
+.toggle-all + label:before {
+    content: '❯';
+    font-size: 22px;
+    color: #e6e6e6;
+    padding: 10px 27px 10px 27px;
+}
+
+.toggle-all:checked + label:before {
+    color: #737373;
+}
+
+.todo-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.todo-list li {
+    position: relative;
+    font-size: 24px;
+    border-bottom: 1px solid #ededed;
+}
+
+.todo-list li:last-child {
+    border-bottom: none;
+}
+
+.todo-list li.editing {
+    border-bottom: none;
+    padding: 0;
+}
+
+.todo-list li.editing .edit {
+    display: block;
+    width: 506px;
+    padding: 12px 16px;
+    margin: 0 0 0 43px;
+}
+
+.todo-list li.editing .view {
+    display: none;
+}
+
+.todo-list li .toggle {
+    text-align: center;
+    width: 40px;
+    /* auto, since non-WebKit browsers doesn't support input styling */
+    height: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    border: none; /* Mobile Safari */
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.todo-list li .toggle {
+    opacity: 0;
+}
+
+.todo-list li .toggle + label {
+    /*
+        Firefox requires `#` to be escaped - https://bugzilla.mozilla.org/show_bug.cgi?id=922433
+        IE and Edge requires *everything* to be escaped to render, so we do that instead of just the `#` - https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/7157459/
+   ,*/
+    background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%23ededed%22%20stroke-width%3D%223%22/%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: center left;
+}
+
+.todo-list li .toggle:checked + label {
+    background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%23bddad5%22%20stroke-width%3D%223%22/%3E%3Cpath%20fill%3D%22%235dc2af%22%20d%3D%22M72%2025L42%2071%2027%2056l-4%204%2020%2020%2034-52z%22/%3E%3C/svg%3E');
+}
+
+.todo-list li label {
+    word-break: break-all;
+    padding: 15px 15px 15px 60px;
+    display: block;
+    line-height: 1.2;
+    transition: color 0.4s;
+}
+
+.todo-list li.completed label {
+    color: #d9d9d9;
+    text-decoration: line-through;
+}
+
+.todo-list li .destroy {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 10px;
+    bottom: 0;
+    width: 40px;
+    height: 40px;
+    margin: auto 0;
+    font-size: 30px;
+    color: #cc9a9a;
+    margin-bottom: 11px;
+    transition: color 0.2s ease-out;
+}
+
+.todo-list li .destroy:hover {
+    color: #af5b5e;
+}
+
+.todo-list li .destroy:after {
+    content: '×';
+}
+
+.todo-list li:hover .destroy {
+    display: block;
+}
+
+.todo-list li .edit {
+    display: none;
+}
+
+.todo-list li.editing:last-child {
+    margin-bottom: -1px;
+}
+
+.footer {
+    color: #777;
+    padding: 10px 15px;
+    height: 20px;
+    text-align: center;
+    border-top: 1px solid #e6e6e6;
+}
+
+.footer:before {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 50px;
+    overflow: hidden;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2),
+                0 8px 0 -3px #f6f6f6,
+                0 9px 1px -3px rgba(0, 0, 0, 0.2),
+                0 16px 0 -6px #f6f6f6,
+                0 17px 2px -6px rgba(0, 0, 0, 0.2);
+}
+
+.todo-count {
+    float: left;
+    text-align: left;
+}
+
+.todo-count strong {
+    font-weight: 300;
+}
+
+.filters {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    position: absolute;
+    right: 0;
+    left: 0;
+}
+
+.filters li {
+    display: inline;
+}
+
+.filters li a {
+    color: inherit;
+    margin: 3px;
+    padding: 3px 7px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+}
+
+.filters li a:hover {
+    border-color: rgba(175, 47, 47, 0.1);
+}
+
+.filters li a.selected {
+    border-color: rgba(175, 47, 47, 0.2);
+}
+
+.clear-completed,
+html .clear-completed:active {
+    float: right;
+    position: relative;
+    line-height: 20px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.clear-completed:hover {
+    text-decoration: underline;
+}
+
+.info {
+    margin: 65px auto 0;
+    color: #bfbfbf;
+    font-size: 10px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+.info p {
+    line-height: 1;
+}
+
+.info a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 400;
+}
+
+.info a:hover {
+    text-decoration: underline;
+}
+
+/*
+    Hack to remove background from Mobile Safari.
+    Can't use it globally since it destroys checkboxes in Firefox
+,*/
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .toggle-all,
+    .todo-list li .toggle {
+        background: none;
+    }
+
+    .todo-list li .toggle {
+        height: 40px;
+    }
+}
+
+@media (max-width: 430px) {
+    .footer {
+        height: 50px;
+    }
+
+    .filters {
+        bottom: 10px;
+    }
+}
+#+end_src
+***** /* === Timer Component Styling Fit for WorderMVC === */
+#+begin_src css :no-expand t :mkdirp yes 
+
+.todo-list li label {
+    display: flex;
+    }
+
+.todo-list li .view {
+    display: flex;
+    padding-right: 41px;
+    }
+
+.todo-list li .timer {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto; 
+}
+
+.todo-list li .timer button {
+    font-size: 13px;           
+    padding: 7px 13px;         
+    background: none;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.2s ease-out;
+}
+
+.todo-list li .timer button:hover {
+    background: #eee;
+    border-color: #bbb;
+    color: #333;
+}
+
+/* состояние когда таймер запущен */
+.todo-list li .timer.running button {
+    background: #27ae60;
+    border-color: #1e874b;
+    color: #fff;
+}
+
+.todo-list li.completed .timer .seconds {
+    color: #d9d9d9;
+}
+
+.todo-list li .timer .seconds {
+    margin-left: 8px;
+    font-size: 14px;
+    color: #777;
+    min-width: 70px;
+    text-align: right;
+}
+
+
+#+end_src
+***** /* === Export Panel Layout === */
+#+begin_src css :no-expand t :mkdirp yes 
+.export-panel {
+    display: flex;
+    justify-content: flex-start;
+    gap: 8px;
+    margin: 10px 0 15px 0;
+    padding-left: 2px;
+}
+
+#+end_src
+***** /* === Export Button (Keechma WorderMVC) === */
+#+begin_src css :no-expand t :mkdirp yes 
+.export-btn {
+    float: right;
+    margin-left: 8px;
+    padding: 3px 10px;
+    font-size: 12px;
+    line-height: 20px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fafafa;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.2s ease-in-out;
+}
+
+.export-btn:hover {
+    background: #e6e6e6;
+    border-color: #aaa;
+    color: #333;
+}
+
+.export-btn:active {
+    background: #d6d6d6;
+    border-color: #888;
+}
+
+.footer .export-btn {
+    position: relative;
+    top: -2px;
+}
+
+
+#+end_src
+**** ИИ
+***** довай сделаем стиль
+для этих двух элементов.
+**** exampl
+(find-file-other-frame "~/Dev/ClojureScript/tutorials/my-cljs-project/example-todomvc/resources/public/css/style.css")
+**** CANCELED arhiv
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+***** 00 /* === Timer Component Styles === */
+#+begin_src css :no-expand t :mkdirp yes 
+
+.timer {
+    margin: 15px auto;
+    padding: 10px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.timer button {
+    background: #5dc2af;
+    color: #fff;
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease-out;
+    border: none;
+}
+
+.timer button:hover {
+    background: #54b2a0;
+}
+
+.timer button:active {
+    background: #4aa492;
+}
+
+.timer .seconds {
+    margin-left: 10px;
+    font-weight: bold;
+    color: #4d4d4d;
+}
+
+.timer.running .seconds {
+    color: #5dc2af;
+}
+#+end_src
+***** 00 /* === Timer Component Styling Fit for TodoMVC === */
+#+begin_src css :no-expand t :mkdirp yes 
+.todo-list li .timer {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.todo-list li .timer button {
+    font-size: 12px;
+    padding: 3px 6px;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #777;
+    transition: all 0.2s ease-out;
+}
+
+.todo-list li .timer button:hover {
+    background: #eee;
+    border-color: #bbb;
+    color: #555;
+}
+
+.todo-list li .timer button:active {
+    background: #ddd;
+    border-color: #aaa;
+    color: #333;
+}
+
+.todo-list li .timer .seconds {
+    margin-left: 6px;
+    font-size: 12px;
+    color: #777;
+}
+
+.todo-list li.completed .timer .seconds {
+    color: #d9d9d9;
+}
+
+#+end_src
+
+***** 00 /* === Export Button (Keechma WorderMVC) === */
+#+begin_src css :no-expand t :mkdirp yes 
+.export-btn {
+    float: right;
+    margin-left: 8px;
+    padding: 3px 10px;
+    font-size: 12px;
+    line-height: 20px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fafafa;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.2s ease-in-out;
+}
+
+.export-btn:hover {
+    background: #e6e6e6;
+    border-color: #aaa;
+    color: #333;
+}
+
+.export-btn:active {
+    background: #d6d6d6;
+    border-color: #888;
+}
+
+.footer .export-btn {
+    position: relative;
+    top: -2px;
+}
+
+
+#+end_src
+* files worder
+** files core
+(find-file-other-frame "./project.clj")
+(find-file-other-frame "./src/keechma_todomvc/app.cljs")
+(find-file-other-frame "./src/keechma_todomvc/subscriptions.cljs")
+(find-file-other-frame "./src/keechma_todomvc/ui.cljs")
+(find-file-other-frame "./src/keechma_todomvc/util.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components.cljs")
+(find-file-other-frame "./src/keechma_todomvc/edb.cljs")
+(find-file-other-frame "./src/keechma_todomvc/edb.clj")
+** files components
+(find-file-other-frame "./src/keechma_todomvc/components/app.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/new_todo.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/toggle_todos.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/todo_list.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/todo_item.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/todo_edit.cljs")
+(find-file-other-frame "./src/keechma_todomvc/components/footer.cljs")
+** files controler
+(find-file-other-frame "./src/keechma_todomvc/controllers/todos.cljs")
+** files entities
+(find-file-other-frame "./src/keechma_todomvc/entities/todo.cljs")
+** files resurs
+(find-file-other-frame "./resources/public/css/style.css")
+(find-file-other-frame "./resources/public/index.html")
+** files project
+(find-file-other-frame "./project.clj")
+(find-file-other-frame "./target/stale/leiningen.figwheel.clean-on-dependency-change")
+* run
+** repl
+#+begin_src elisp :results output silent 
+(evil-previous-line)
+(org-cycle)
+(delete-other-windows)
+(let (buffer-name-to-close (buffer-name))
+        (evil-window-split)
+        (eshell)
+        (evil-quit)
+        (switch-to-buffer-other-frame buffer-name-to-close))
+#+end_src
+
+lein figwheel
+
+:cljs/quit
+:cljs/restart
+
+
+cd worder
+clojure -M:fig:build
+clojure -M:fig:build dev
+
+ls 
+ls target public/js
+ls .cpcache
+rm -rf target public/js
+rm -rf .cpcache
+
+lein cljsbuild once
+
+lein deps :refresh
+
+** git
+*** init
+git init
+git add .
+git commit -m "start"
+*** push
+*** clon
+git clone https://github.com/keechma/example-todomvc.git
+** build
+:cljs/quit
+rm resources/public/js/app.js
+lein do clean, cljsbuild once min
+cp resources/public/js/app.js "~/Dev/ClojureScript/worder/js/app.js"
+cp resources/public/index.html "~/Dev/ClojureScript/worder/index.html"
+cp -r resources/public/txt "~/Dev/ClojureScript/worder/"
+
+
+надо удолить вручную
+  resources/public/js/app.js
+  и тогда проходит комплиция нормально
+rm resources/public/js/app.js
+lein do clean, cljsbuild once min
+
+Добавь :clean-targets в project.clj, чтобы lein clean удалял весь js-папку:
+:clean-targets ^{:protect false} ["resources/public/js" "target"]
+(Это гарантирует, что resources/public/js/app.js удалится при lein clean.)
+
+
+lein clean
+
+lein cljsbuild once min
+
+  resources/public/js/app.js
+  resources/public/js/min/
+
+2. Можно протестировать локально:
+   python3 -m http.server -d resources/public
+   или
+   npx http-server resources/public
+
+** publish
+*** git
+git remote add origin https://github.com/Buyn/worder.git
+git branch -M main
+git push -u origin main
+
+https://buyn.github.io/
+
+https://<username>.github.io/<repo-name>/.
+https://buyn.github.io/worder.git
+https://buyn.github.io/worder.git/.
+*** orign
+# Sample workflow for building and deploying a Jekyll site to GitHub Pages
+name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+*** static.yml
+
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy static content to Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+*** workflows
+worder/.github/workflows
+.github/workflows/deploy.yml
+*** name: Build and Deploy
+name: Build and Deploy
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Clojure tools
+        uses: DeLaGuardo/setup-clojure@v2
+        with:
+          deps: 'true'
+          tools-deps: 'true'
+
+      - name: Build ClojureScript
+        run: |
+          lein clean
+          lein cljsbuild once min
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./resources/public
+
+* описание
+** ИИ
+если мне интересно сделать компонент для настолькной игры
+например игральная карта. Тоесть основной её функцикй будет возможность перетегивания, при зажатой левой кноаке.
+как можно былобы это проще реализовть?
+** код ИИ
+Перетаскиваемая карта — это классический **интерактивный компонент**.
+И можно сделать его **очень просто** в Reagent/ClojureScript — без тяжёлых библиотек.
+
+Вот визуально, о чём речь:
+
+---
+
+## ✅ Самый простой путь: HTML5 Drag & Drop + Reagent
+
+### 🔹 Карта как React/Reagent компонент
+
+```clojure
+(ns game.components.card
+  (:require [reagent.core :as r]))
+
+(defn card [{:keys [id suit rank]}]
+  [:div.card
+   {:draggable true
+    :on-drag-start #(js/console.log "drag start" id)}
+   (str rank " " suit)])
+```
+
+ВСЁ ✅
+Уже перетаскивается!
+Пока что без логики — просто событие.
+
+---
+
+## ➕ Чтобы **карта могла менять своё положение** на столе
+
+Мы храним позицию карты в **atom**:
+
+```clojure
+(defonce positions (r/atom {}))
+
+(defn set-position! [id x y]
+  (swap! positions assoc id {:x x :y y}))
+```
+
+---
+
+## 🔥 Карта с абсолютным позиционированием и поведением drag-move
+
+```clojure
+(defn draggable-card [{:keys [id suit rank]}]
+  (let [{:keys [x y]} (get @positions id {:x 100 :y 100})]
+    [:div.card
+     {:style {:position "absolute"
+              :cursor "grab"
+              :left x
+              :top y}
+      :on-mouse-down
+      (fn [e]
+        (let [start-x (.-clientX e)
+              start-y (.-clientY e)
+              on-move
+              (fn [e2]
+                (set-position! id
+                               (+ x (- (.-clientX e2) start-x))
+                               (+ y (- (.-clientY e2) start-y))))
+              on-up
+              (fn [_]
+                (.removeEventListener js/window "mousemove" on-move)
+                (.removeEventListener js/window "mouseup" on-up))]
+
+          (.addEventListener js/window "mousemove" on-move)
+          (.addEventListener js/window "mouseup" on-up)))}]
+     (str rank " " suit)]))
+```
+
+---
+
+### ✅ Что умеет эта версия
+
+✔ Берём карту мышкой
+✔ Тянем — карта двигается под курсором
+✔ Отпустили — карта остаётся на своём новом месте
+
+Никаких зависимостей!
+Просто Reagent + DOM events.
+
+---
+
+## 🚀 Улучшения, которые легко добавить
+
+| Возможность                | Как сделать                    |
+| -------------------------- | ------------------------------ |
+| Слои (карта поверх других) | z-index, счётчик слоёв         |
+| Повороты                   | CSS transform: rotate          |
+| Перетаскивание в зоны      | Проверять координаты drop      |
+| Touch-поддержка            | on-touch-start / on-touch-move |
+| Анимация движения          | Position → CSS transition      |
+
+Хочешь — сделаю **красивый UI** с бейсами карт 🎨
+
+---
+
+## ❓ Спрошу на будущее:
+
+Какую конкретно игру ты планируешь?
+
+1️⃣ Карточная (пасьянс, MTG, Uno …)?
+2️⃣ Настольная (плитки, фишки, поля)?
+3️⃣ Пошаговая стратегия?
+
+И сколько карт может быть одновременно на столе?
+
+Если расскажешь — спроектирую **правильную архитектуру** (Keystates, Event-bus, FSM для правил, стеки действий).
+
+---
+
+Хочешь — давай сделаем **рабочий прототип прямо здесь** 🧠⚡
+С тебя идея игры — с меня код и анимации 💜
+** ИИ 
+мне интересно сделать кложур скрипт приложени на Keechma Симулятор табле топ и борд гейс.
+тоесть должны быть компоненты карты, колоды, кости, тайлы.
+они должны будут делатся на основе некоторого джейсон описания.
+главный функционал скоторого нужно начать. Это возможность перетягивания компонетов.
+это не плохо реализуется на реагенте.
+но мне нужо и "перетягивать столь". Тость менять абсолютное значаенеи коорднат, но некому бесконечному столоу.
+иметь возможно приближать и удолять камеру к столу.
+и тут возникает вопрос не проще ли будет это реализовать на канве?
+или можно изменить копоненты реагента чтоб они так себя вели?
+помоги выбрать наилучшее решение.
+** Konva.js
+Отличный вопрос — и очень уместный для симулятора настолок, потому что именно сочетание **интерактивности (drag-n-drop)** и **“бесконечного стола” с масштабированием и панорамированием** ставит React/Reagent в довольно спорное положение.
+Разберём по слоям, чтобы выбрать стратегию без компромиссов.
+
+---
+
+### 🔹 Что ты хочешь построить
+
+> Keechma-приложение (архитектурный фреймворк на Reagent/Re-frame основе)
+> с JSON-описываемыми компонентами (карты, колоды, кости, тайлы),
+> которые можно перетаскивать, масштабировать и двигать в “бесконечном столе”.
+
+Это ставит задачу на **рендеринг** (Canvas vs DOM) и **архитектуру взаимодействий** (drag, zoom, pan, snapping и т.д.)
+
+---
+
+### 🔹 Вариант 1: Чисто Reagent (DOM + CSS transforms)
+
+✅ **Плюсы:**
+
+  * Максимальная интеграция с Keechma (state, subscriptions, commands и т.п.).
+  * Drag-n-drop можно сделать через `react-dnd` или `interact.js`.
+  * “Камеру” (пан и зум) можно реализовать через CSS `transform: translate() scale()` на контейнере “стола”.
+
+🚫 **Минусы:**
+
+  * Производительность начнёт страдать, если на столе десятки/сотни компонентов (DOM-ноды дорогие).
+  * При зуме и пане легко словить артефакты с hit-тестами (drag перестаёт совпадать с реальными координатами).
+  * Реализация плавного перемещения/инерции — геморрой.
+
+💡 **Итого:** подходит, если стол компактный и взаимодействий немного (до 100 объектов).
+
+---
+
+### 🔹 Вариант 2: Canvas (через Reagent компонент с `canvas` API)
+
+✅ **Плюсы:**
+
+  * Лёгкий рендеринг даже при сотнях объектов.
+  * Зум и пан — естественны, ты просто меняешь `ctx.scale` и `ctx.translate`.
+  * Проще реализовать “бесконечность стола” и эффекты (тени, подсветки, слои).
+  * Можно использовать библиотеку вроде [Konva.js](https://konvajs.org/) (есть [react-konva](https://github.com/konvajs/react-konva), которую можно обернуть в Reagent).
+
+  🚫 **Минусы:**
+
+  * Нужно вручную писать логику выделения/drag-n-drop (hit testing).
+  * Сложнее интеграция с типичным Keechma flow (состояние придётся хранить отдельно и синхронизировать).
+
+💡 **Итого:** идеален, если тебе важны производительность, реалистичная физика и масштабируемость “мира”.
+
+---
+
+### 🔹 Вариант 3: Гибрид (DOM UI + Canvas стол)
+
+Используется во многих современных tabletop симуляторах (веб-вариантах):
+
+  * Canvas для “мира” (игрового поля, объектов, перемещений, зума).
+  * React/Reagent DOM-оверлей для интерфейса, меню, диалогов, панелей.
+
+💡 Это **золотая середина**:
+
+  * Canvas рендерит контент.
+  * Reagent управляет состоянием (Keechma orchestration, JSON → объекты).
+  * UI остаётся декларативным, а физика и движение — нативно быстрыми.
+
+---
+
+### 🔹 Рекомендация
+
+Для твоей цели:
+
+> “симулятор настолки с перетаскиванием, зумом и бесконечным столом”
+
+✅ **Оптимальный выбор:**
+**Hybrid → Reagent + Konva.js (через react-konva)**
+
+  * Ты можешь хранить всё описание в Keechma’s `EDB` и генерировать объекты на Canvas.
+  * Реализовать drag-n-drop и зум можно за вечер (Konva даёт готовые обработчики).
+  * Панорамирование/масштаб — встроены.
+  * Добавление анимации и визуальных эффектов (например, бросок кости) элементарно.
+
+---
+
+Хочешь — я покажу минимальный пример “Keechma + Reagent + react-konva” проекта,
+где можно:
+
+  * двигать объекты (drag),
+  * зумить колесом,
+  * и перемещать сам “стол” (pan)?
+
+Это даст тебе стартовую точку для будущего симулятора.
+** Что делает Konva.js
+
+Отличный вопрос — Konva.js — это не просто библиотека, а, можно сказать, **“React для Canvas”**, только заточенный под **интерактивную 2D-графику**, типа твоего “настольного симулятора”.
+
+---
+
+### 🔹 Что делает Konva.js
+
+**Konva.js** — это JavaScript-библиотека для работы с HTML5 Canvas,
+которая добавляет:
+
+  * **Сцену (Stage)** и **слои (Layers)** — как в графических редакторах.
+  * **Объекты (Shapes)**: прямоугольники, изображения, текст, группы.
+  * **События**: `onClick`, `onDragMove`, `onMouseOver`, и даже `onWheel`.
+  * **Трансформации**: `x`, `y`, `scaleX`, `rotation` — всё управляется как свойства React-компонента.
+  * **Хит-тестинг** и **drag-and-drop** реализованы внутри — тебе не нужно вручную вычислять попадания курсора по пикселям.
+
+---
+
+### 🔹 Пример “Hello Konva”
+
+Вот насколько прост пример:
+
+```clojure
+(ns my-game.core
+  (:require ["react-konva" :refer [Stage Layer Rect]]))
+
+(defn canvas-view []
+  [:> Stage {:width 800 :height 600}
+   [:> Layer {}
+    [:> Rect {:x 50 :y 60
+              :width 100 :height 100
+              :fill "red"
+              :draggable true
+              :onClick #(js/alert "clicked!")}]]])
+```
+
+💡 `[:> ...]` — это синтаксис Reagent для вставки React-компонентов.
+Тут:
+
+  * `Stage` — это “сцена”, аналог твоего “стола”.
+  * `Layer` — слой (их можно несколько, как “фоны”, “карты”, “фишки”).
+  * `Rect` — объект, который можно двигать и с которым можно взаимодействовать.
+
+---
+
+### 🔹 Почему он идеален для tabletop
+
+| Возможность                           | Реализация в Konva                                            |
+| ------------------------------------- | ------------------------------------------------------------- |
+| Перетаскивание (drag-and-drop)        | `:draggable true`                                             |
+| Зум и панорама                        | слушатель `onWheel` + `stage.scale()` и `stage.position()`    |
+| “Бесконечный стол”                    | можно просто двигать `stage` или подгружать тайлы динамически |
+| Отрисовка сотен объектов              | Canvas-рендеринг, без DOM overhead                            |
+| Группы (например, колода карт)        | `Group` компонент                                             |
+| Эффекты (тени, прозрачность, фильтры) | встроенные свойства и фильтры                                 |
+
+---
+
+### 🔹 Бонус — React-совместимость
+
+Есть официальная обёртка **[react-konva](https://konvajs.org/docs/react/index.html)**,
+поэтому ты можешь использовать её прямо в **Reagent / Keechma** без боли.
+Всё декларативно и реагирует на изменение состояния, как обычный компонент.
+
+---
+
+### 🔹 Итого
+
+> 💬 **Konva.js** — это движок, который делает Canvas интерактивным и “реактивным”.
+>
+> ⚙️ Подходит идеально для твоего tabletop симулятора, где всё должно двигаться, масштабироваться и не тормозить.
+
+---
+
+Хочешь, я покажу рабочий пример на **Reagent + react-konva**,
+где можно и **перетаскивать фигуры**, и **зумить колесом**, и **двигать “стол”** мышью — как в настоящем настольном симуляторе?
+** React-Konva вписывается в Reagent/Keechma стек
+Да 😎 — **оно прекрасно вписывается в твой Reagent/Keechma стек**, потому что `react-konva` — это обычные React-компоненты,
+а Reagent умеет рендерить *любой* React-компонент через стандартный хикаповый синтаксис.
+
+Так что да — **ты можешь использовать Hiccup как обычно** и спокойно **форвардить компоненты** из Keechma/Reagent в `react-konva`.
+Давай разберём это чуть глубже, чтобы не оставалось “магии”.
+
+---
+
+### 🔹 1. React-Konva — это просто React-компоненты
+
+Например, в JS они выглядят так:
+
+```jsx
+<Stage>
+  <Layer>
+    <Rect x={10} y={10} width={100} height={100} draggable={true} />
+  </Layer>
+</Stage>
+```
+
+---
+
+### 🔹 2. В Reagent (и Keechma) ты пишешь то же самое в Hiccup
+
+Reagent имеет спец-форму `:>` для вставки нативного React-компонента.
+
+```clojure
+(ns myapp.ui.board
+  (:require ["react-konva" :refer [Stage Layer Rect]]))
+
+(defn board []
+  [:> Stage {:width 800 :height 600}
+   [:> Layer {}
+    [:> Rect {:x 50 :y 50
+              :width 100 :height 100
+              :fill "skyblue"
+              :draggable true
+              :onClick #(js/console.log "Clicked!")}]])
+```
+
+💡 Здесь `:>` означает “используй этот компонент напрямую”,
+а все `props` (`:width`, `:height`, `:fill`, `:onClick`) передаются 1:1.
+
+---
+
+### 🔹 3. Keechma-интеграция — нативная
+
+Keechma работает на Reagent-компонентах, поэтому `react-konva`
+можно использовать **прямо внутри Keechma views**.
+
+Например:
+
+```clojure
+(ns app.ui.main
+  (:require
+   [keechma.ui-component :as ui]
+   ["react-konva" :refer [Stage Layer Circle]]))
+
+(defn render [ctx]
+  [:div.game-container
+   [:> Stage {:width 800 :height 600}
+    [:> Layer {}
+     [:> Circle {:x 100 :y 100
+                 :radius 40
+                 :fill "tomato"
+                 :draggable true
+                 :onDragMove
+                   (fn [e]
+                     (ui/dispatch ctx :move-token
+                       {:x (.. e -target -x)
+                        :y (.. e -target -y)}))}]]]])
+```
+
+💡 Здесь ты:
+
+  * Используешь Keechma `ctx` как обычно.
+  * Обрабатываешь события Konva (например `onDragMove`).
+  * Диспатчишь команды Keechma (через `ui/dispatch`).
+
+---
+
+### 🔹 4. Да, можно “форвардить” компоненты
+
+Ты можешь спокойно создавать свои `[:> Group]` или `[:> Rect]`
+компоненты и прокидывать их как дочерние — как будто это обычный DOM:
+
+```clojure
+(defn card [props]
+  [:> Group props
+   [:> Rect {:width 60 :height 90 :fill "white" :stroke "black"}]
+   [:> Text {:text (:title props) :x 5 :y 5 :fontSize 14}]])
+```
+
+А потом использовать:
+
+```clojure
+[:> Layer {}
+ [card {:x 100 :y 100 :title "Ace of Spades"}]
+ [card {:x 200 :y 120 :title "Queen of Hearts"}]]
+```
+
+То есть — да, **ты можешь форвардить свои Reagent-компоненты прямо в Canvas-иерархию Konva**, как будто это обычные React-компоненты.
+
+---
+
+### 🔹 5. Микс Keechma + JSON описаний
+
+Ты даже можешь хранить JSON вроде:
+
+```json
+[
+  {"type": "card", "x": 100, "y": 100, "title": "Ace"},
+  {"type": "dice", "x": 300, "y": 150, "sides": 6}
+]
+```
+
+и рендерить динамически:
+
+```clojure
+(for [item items]
+  (case (:type item)
+    "card" [card item]
+    "dice" [dice item]))
+```
+
+Так ты получишь динамическое создание объектов на Canvas
+по JSON-описаниям — как ты и хотел изначально.
+
+---
+
+Хочешь — я покажу тебе минимальный **Keechma + Reagent + react-konva** пример проекта,
+где есть “стол”, перетаскиваемые карточки и камера (пан/зум)?
+Можно прямо на базе skeleton’а Keechma.
+** Идеальная структура tabletop-приложения
+Отличный вопрос — и ты на самом деле уже мысленно стоишь **на границе двух миров**:
+🧠 *декларативного Reagent/React UI* и 🎮 *императивного Canvas-мира Konva*.
+Понять, где кончается одно и начинается другое — это ключ к красивой архитектуре tabletop-симулятора.
+
+Давай аккуратно разделим роли, чтобы ты чётко видел, **где Reagent незаменим**, а где **Konva рулит**.
+
+---
+
+## 🔹 Где нужен **Reagent** (и значит Keechma)
+
+Reagent остаётся твоим “мозгом” и “панелью управления”:
+
+  * Управляет **состоянием** (Keechma EDB, subscriptions, commands).
+  * Рисует **UI вне Canvas** — меню, панели, попапы, модалки, настройки, чаты, лог действий, селекторы колод и т.д.
+  * Реализует **реактивную бизнес-логику** — например, если карта выложена на стол, Keechma обновляет её позицию, синхронизирует с сервером, триггерит анимации и т.д.
+  * Хранит всё как **декларативное состояние**, а не императивные Canvas-команды.
+
+💡 Проще говоря:
+
+> Reagent/Keechma управляет “моделью игры”, а Konva только рисует текущее состояние этой модели.
+
+---
+
+## 🔹 Где нужен **Konva.js**
+
+Konva — это твой **рендерер и физический слой**:
+
+  * Всё, что **движется, перетаскивается, масштабируется**.
+  * Всё, где важна **производительность** (Canvas быстрее DOM).
+  * Всё, где UI должен быть “игровым”, а не “формовым”.
+
+Примеры:
+
+  * Карты, фишки, кости, тайлы, маркеры.
+  * Стол с панорамой и зумом.
+  * Анимации бросков, подсветки, столкновений и т.д.
+
+---
+
+## 🔹 Что проще не делать на Konva вручную
+
+Konva — шикарен, но не стоит насиловать его для вещей, где React лучше.
+Вот что **лучше оставить Reagent-у**:
+
+| Задача                                        | Почему Reagent проще                                              |
+| --------------------------------------------- | ----------------------------------------------------------------- |
+| Меню, кнопки, тулбары, выпадашки              | DOM имеет готовую семантику, стили и фокус-менеджмент             |
+| Настройки и формы                             | Реактивный state и input-контроль проще в React                   |
+| Окна диалогов (“Save Game?”, “Invite Player”) | Keechma уже умеет управлять такими состояниями                    |
+| Tooltip’ы, всплывающие подсказки              | DOM-оверлей проще позиционировать поверх Canvas                   |
+| Серверное взаимодействие                      | Keechma commands/subscriptions — лучший способ для сетевой логики |
+
+---
+
+## 🔹 Где **Reagent и Konva должны работать вместе**
+
+Там, где нужно реактивное управление Canvas-объектами.
+Например:
+
+```clojure
+(defn card [ctx {:keys [x y title selected?]}]
+  [:> Group {:x x :y y :draggable true
+             :onClick #(ui/dispatch ctx :select-card title)}
+   [:> Rect {:width 60 :height 90
+             :fill (if selected? "gold" "white")
+             :stroke "black"}]
+   [:> Text {:text title :x 5 :y 5 :fontSize 14}]])
+```
+
+💡 Здесь Reagent рендерит Konva-объект,
+но `selected?` берётся из **Keechma state** — т.е. UI остаётся декларативным.
+Если `selected?` поменялся, Reagent сам обновит `fill`, не нужно руками перерисовывать Canvas.
+
+---
+
+## 🔹 Идеальная структура tabletop-приложения
+
+```
+Keechma (App state)
+├── UI (Reagent)
+│   ├── Панели, меню, модалки
+│   └── HUD, настройки, чат
+└── Scene (Konva)
+    ├── Слой стола (background, grid)
+    ├── Слой объектов (карты, кости, фигуры)
+    └── Слой эффектов (highlight, selection)
+```
+
+📦 Вся логика — в Keechma.
+🎨 Визуализация — в Konva.
+🧩 Синхронизация — через Reagent.
+
+---
+
+## 🔹 Вывод
+
+Используй Reagent:
+
+  * как **архитектуру** (Keechma);
+  * как **интерфейс** для всего вне игрового поля;
+  * как **декларативную прослойку** к Konva.
+
+Используй Konva:
+
+  * как **рендеринг-движок** и **поведение** для объектов внутри поля.
+
+---
+
+Если хочешь, я покажу **живой пример архитектуры**
+(с Keechma routes, EDB, Reagent views и react-konva сценой),
+где есть панель инструментов (Reagent) и поле с перетаскиваемыми карточками (Konva)?
+* Docs
+** туториалс
+*** konva
+https://www.youtube.com/watch?v=iUm2wHHel4s
+
+https://www.youtube.com/watch?v=VbhaiPFEnko
+
+https://www.youtube.com/watch?v=19L5DbC2Ye4
+** exempls
+*** file worder-cljs-project.org
+(find-file-other-frame "/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/worder/worder-cljs-project.org")
+*** my-cljs-project.org
+(find-file-other-frame "/home/buyn/Dev/ClojureScript/tutorials/my-cljs-project/my-cljs-project.org")
+
+* TODO
+** DONE сделать орг
+** DONE перенести в орг всё нужное
+** DONE сделать авто открытие орга
+видемо новый раздел десктоп
+и добавить по аналогии позиция файла
+** TODO сделать гит
+*** на сайте
+*** инит
+*** первый комит
+*** запостить
+** взять за основу тудуер
+** сделать первый запуск
+** убрать КСС
+** вычестить всё лишнее
+
+* backlog
+* project comands
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+** поиск по проекту
+*** 
+**** dropbox in org
+#+begin_src sh  
+grep --include=\*.cljs -rnw ./ -e ":todos-by-status"
+#+end_src       
+
+#+RESULTS:
+| ./src/keechma_todomvc/components/todo_list.cljs:18:-                     | `:todos-by-status` | returns           | `todos`         | with  | a   | `status`         |                    |
+| ./src/keechma_todomvc/components/todo_list.cljs:26:                      | (doall             | (map              | todo-item       | (sub> | ctx | :todos-by-status | route-status)))])) |
+| ./src/keechma_todomvc/components/todo_list.cljs:31:                      | :subscription-deps | [:todos-by-status |                 |       |     |                  |                    |
+| ./src/keechma_todomvc/subscriptions.cljs:48:(def                         | subscriptions      | {:todos-by-status | todos-by-status |       |     |                  |                    |
+| ./resources/public/js/dev/keechma_todomvc/components/todo_list.cljs:18:- | `:todos-by-status` | returns           | `todos`         | with  | a   | `status`         |                    |
+| ./resources/public/js/dev/keechma_todomvc/components/todo_list.cljs:26:  | (doall             | (map              | todo-item       | (sub> | ctx | :todos-by-status | route-status)))])) |
+| ./resources/public/js/dev/keechma_todomvc/components/todo_list.cljs:31:  | :subscription-deps | [:todos-by-status |                 |       |     |                  |                    |
+| ./resources/public/js/dev/keechma_todomvc/subscriptions.cljs:48:(def     | subscriptions      | {:todos-by-status | todos-by-status |       |     |                  |                    |
+
+
+**** dropbox in org
+#+begin_src sh  
+grep --include=\*.cljs -rnw ./ -e "reagent.core"
+#+end_src       
+
+#+RESULTS:
+| ./src/keechma_todomvc/components/new_todo.cljs:5:                          | [reagent.core    | :as             | reagent])) |         |        |           |
+| ./target/public/cljs-out/dev/reagent/core.cljs:1:(ns                       | reagent.core     |                 |            |         |        |           |
+| ./target/public/cljs-out/dev/reagent/core.cljs:2:                          | (:require-macros | [reagent.core]) |            |         |        |           |
+| ./target/public/cljs-out/dev/keechma_todomvc/components/new_todo.cljs:5:   | [reagent.core    | :as             | reagent])) |         |        |           |
+| ./target/public/cljs-out/dev/keechma_todomvc/components/todo_edit.cljs:5:  | [reagent.core    | :as             | reagent])) |         |        |           |
+| ./target/public/cljs-out/dev/keechma/app_state/react_native_router.cljs:3: | [reagent.core    | :as             | r]         |         |        |           |
+| ./target/public/cljs-out/dev/keechma/app_state.cljs:2:                     | (:require        | [reagent.core   | :as        | reagent | :refer | [cursor]] |
+
+
+** files other
+find "$PWD" -type f >>filepath.txt
+
+(find-file-other-frame "./README.md")
+(find-file-other-frame "./figwheel_server.log")
+** repl
+*** run eshell in project root
+clojure -M:fig:build
+:cljs/quit
+:cljs/restart
+
+clj -M:dev
+clojure -m cljs.main --compile my-cljs-project.core --repl
+
+
+clojure -P
+clojure -M:fig:clean
+clojure -M:fig:build
+
+#+begin_src elisp :results output silent :dir ./notes/
+(evil-previous-line)
+(org-cycle)
+(delete-other-windows)
+(let (buffer-name-to-close (buffer-name))
+        (evil-window-split)
+        (eshell)
+        (evil-quit)
+        (switch-to-buffer-other-frame buffer-name-to-close))
+#+end_src
+
+      ;; (execute-kbd-macro "A \C-m")
+*** run eshell in org root
+clj -M:dev
+clojure -m cljs.main --compile my-cljs-project.core --repl
+#+begin_src elisp :results output silent
+(evil-previous-line)
+(org-cycle)
+(delete-other-windows)
+(let (buffer-name-to-close (buffer-name))
+        (evil-window-split)
+        (eshell)
+        (evil-quit)
+        (switch-to-buffer-other-frame buffer-name-to-close))
+#+end_src
+
+      ;; (execute-kbd-macro "A \C-m")
+*** run repl
+clj -M:dev
+clojure -m cljs.main --compile my-cljs-project.core --repl
+
+clojure -M:fig:build
+:cljs/quit
+:cljs/restart
+#+begin_src eshell
+clj -m cljs.main --compile my-cljs-project.core --repl
+
+
+#+end_src
+
+#+RESULTS:
+*** repl commands
+:cljs/quit
+*** repl test
+(js/alert "Am I connected?")
+** new project
+clj -X:new :template figwheel-main :name learn-cljs/notes :args '["+deps" "--reagent"]'
+
+{:deps {org.clojure/clojure {:mvn/version "1.10.0"}
+        org.clojure/clojurescript {:mvn/version "1.10.773"}
+        reagent/reagent {:mvn/version "1.0.0"}
+        funcool/bide {:mvn/version "1.6.0"}
+        camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.2"}}
+
+$ clj -X:new :template figwheel-main :name learn-cljs/weather :args 
+[[file:~/Dropbox/orgs/org-Brain/ClojureScript Idioms.org::*2025-09-04T11:12:30+03:00][2025-09-04T11:12:30+03:00]]
+** cider
+If you have a Clojure project in your file system and want CIDER to launch an nREPL session for it, simply visit a file that belongs to the project, and type M-x cider-jack-in RET.[1] CIDER will start an nREPL server and automatically connect to it.
+  In Clojure(Script) buffers the command cider-jack-in is bound to C-c C-x (C-)j (C-)j. 
+
+** console
+*** run console in org root
+clj -M:dev
+clojure -m cljs.main --compile my-cljs-project.core --repl
+#+begin_src elisp :results output silent
+(buyn-shell-start "konsole")
+(evil-previous-line)
+(org-cycle)
+(delete-other-windows)
+#+end_src
+
+*** run console with command
+#+begin_src elisp :results output silent
+(buyn-shell-start "konsole -e /bin/bash --rcfile <(clj -M:dev)")
+(evil-previous-line)
+(org-cycle)
+(delete-other-windows)
+#+end_src
+
+** auto-tangle-block:
+#+NAME: auto-tangle-block
+#+begin_src emacs-lisp :results output silent :tangle no
+(setq org-src-preserve-indentation t)
+(untabify (point-min) (point-max))
+(save-buffer)
+;; (universal-argument)
+;; (universal-argument)
+(org-babel-tangle)
+(evil-close-fold)
+(evil-close-fold)
+;; (find-file-other-frame "reagent-test/src/learn_cljs/reagent_test.cljs")
+;; (find-file-other-frame "~/INI/hydra-cfg.el")
+;; (load "~/INI/hydra-cfg.el")
+;; (load "~/ELs/BuYn/reader.el")
+ #+end_src
+* 2025-11-11
+** ttbg-cljs
+(find-file-other-frame "/home/buyn/Dev/ClojureScript/ttbg.cljs/ttbg-cljs-project.org")
+** Necroteuch.org:
+#+begin_src emacs-lisp :tangle no
+(find-file-other-frame "~/../Dropbox/orgs/capture/Necroteuch.org")
+#+end_src
